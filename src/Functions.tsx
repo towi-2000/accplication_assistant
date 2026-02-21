@@ -1,11 +1,11 @@
 /**
- * Functions.tsx - Utility-Funktionen und Business-Logik
+ * Functions.tsx - Utility-Funktionen und Business-Logik für Job Assistant
  * 
  * Diese Datei enthält alle nicht-UI-Funktionen der Anwendung:
- * - Übersetzungs- und Theme-Management
- * - Datenvalidierung
- * - Nachrichtenverarbeitung
- * - LocalStorage-Persistierung
+ * - Übersetzungs- und Theme-Management für mehrsprachige UI
+ * - Jobsuche und Bewerbungsvalidierung
+ * - Theme-Verwaltung für verschiedene Designs
+ * - Sprachdaten-Management
  * 
  * Durch die Trennung von UI und Business-Logik wird der Code
  * wartbar, testbar und wiederverwendbar.

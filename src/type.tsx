@@ -1,19 +1,19 @@
 /**
- * type.tsx - TypeScript Type-Definitionen für die gesamte Anwendung
+ * type.tsx - TypeScript Type-Definitionen für Job Assistant
  * 
- * Diese Datei definiert alle TypeScript-Typen und Interfaces der Anwendung.
+ * Diese Datei definiert alle TypeScript-Typen und Interfaces der Jobsuche-Anwendung.
  * Das sorgt für:
  * - Vollständige Typsicherheit während der Entwicklung
- * - Besser Intellisense und Autocompletion in IDEs
+ * - Bessere Intellisense und Autocompletion in IDEs
  * - Fehler zur Compile-Zeit statt zur Runtime
  * - Selbstedokumentation des Codes
  * 
  * Struktur:
- * 1. Message Types - Chat-Nachrichten
- * 2. Conversation Types - Konversationen/Chats
- * 3. Settings Types - Globale und Chat-spezifische Einstellungen
+ * 1. Message Types - Job-Such-Konversationen
+ * 2. Conversation Types - Jobsuche-Sessions
+ * 3. Settings Types - Globale und jobsuche-spezifische Einstellungen
  * 4. Theme Types - Design-Konfigurationen
- * 5. Translation Types - Sprach-Daten
+ * 5. Translation Types - Sprach-Daten (5 Sprachen)
  * 6. Data Types - JSON-Dateiformat
  */
 

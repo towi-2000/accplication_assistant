@@ -1,16 +1,16 @@
 /**
- * App.tsx - Hauptkomponente der AI Assistant Anwendung
+ * App.tsx - Hauptkomponente des Bewerbungs-Assistenten
  * 
  * Diese Komponente ist das Herzstück der Anwendung und verwaltet:
- * - Den Chat-/Nachrichtenverlauf
- * - Globale Einstellungen (Sprache, Theme, globaler System-Prompt)
- * - Chat-spezifische Einstellungen (Temperatur, Modell, Schreibstil)
+ * - Die Job-Such-Konversationen
+ * - Globale Einstellungen (Sprache, Theme, Job-Suchkriterien)
+ * - Job-spezifische Einstellungen (Kreativität bei Vorschlägen, Modell, Ton, Recruiter-Anleitung)
  * - Die Benutzeroberfläche (Sidebar, Header, Messages, Settings-Panels)
  * 
  * Struktur:
- * - Sidebar: Navigation und Konversationshistorie
- * - Chat-Container: Hauptbereich mit Nachrichten und Eingabefeld
- * - Settings-Panels: Floating Panels für Chat- und globale Einstellungen
+ * - Sidebar: Navigation und Jobsuche-Historie
+ * - Chat-Container: Hauptbereich mit Konversationen und Eingabefeld
+ * - Settings-Panels: Floating Panels für Job-Such-Einstellungen und globale Einstellungen
  */
 
 import React, { useState, ChangeEvent, KeyboardEvent } from 'react'
@@ -39,15 +39,15 @@ const { themes, translations } = dataFile
  */
 function App(): React.ReactElement {
   // ========== MESSAGE STATE ==========
-  // messages: Alle Nachrichten in der aktuellen Konversation (User + AI)
+  // messages: Alle Nachrichten in der aktuellen Jobsuche (User-Fragen + Assistenten-Antworten)
   const [messages, setMessages] = useState<Message[]>([
-    { id: 1, text: 'Hallo! Wie kann ich dir heute helfen?', sender: 'ai' }
+    { id: 1, text: 'Hallo! Ich helfe dir bei der Jobsuche, Bewerbungserstellung und Unternehmensforschung. Beschreib dein Profil, dann kann ich dir passende Stellen finden und Bewerbungen optimieren. Los geht\'s! 🚀', sender: 'ai' }
   ])
   // input: Aktuell eingegebener Text im Eingabefeld
   const [input, setInput] = useState<string>('')
   // conversations: Liste aller bisherigen Konversationen in der Sidebar
   const [conversations, setConversations] = useState<Conversation[]>([
-    { id: 1, title: 'Neue Konversation' }
+    { id: 1, title: 'Data Scientist Jobsuche' }
   ])
   // systemPromptApplied: Flag ob der globale Anfangsprompt bereits zur AI gesendet wurde
   const [systemPromptApplied, setSystemPromptApplied] = useState<boolean>(false)
@@ -68,18 +68,18 @@ function App(): React.ReactElement {
   const [globalSettings, setGlobalSettings] = useState<GlobalSettings>({
     language: 'de',
     theme: 'dark',
-    globalSystemPrompt: ''
+    globalSystemPrompt: 'Ich suche eine Stelle im Bereich Tech/Data Science in Deutschland, mit Fokus auf innovative Unternehmen.'
   })
-  // chatSettings: Einstellungen die nur für den aktuellen Chat gelten
-  // - temperature: Kreativität des Modells (0=präzise, 1=kreativ)
+  // chatSettings: Einstellungen die nur für die aktuelle Jobsuche gelten
+  // - temperature: Wie präzise vs. kreativ die Vorschläge sein sollen (0=präzise, 1=kreativ)
   // - model: Welches KI-Modell verwendet werden soll
-  // - writingStyle: Schreibstil der Antworten
-  // - systemPrompt: Chat-spezifische Anweisungen für die KI
+  // - writingStyle: Ton der Bewerbungsschreiben (Professionell, Standard, Enthusiastisch, Technisch)
+  // - systemPrompt: Recruiter-Anleitung für diese Jobsuche
   const [chatSettings, setChatSettings] = useState<ChatSettings>({
-    temperature: 0.7,
+    temperature: 0.5,
     model: 'gpt-4',
-    writingStyle: 'normal',
-    systemPrompt: ''
+    writingStyle: 'formal',
+    systemPrompt: 'Ich bin ein erfahrener Recruiter und Karriereberater. Ich helfe bei der Jobsuche, Bewerbungserstellung und Unternehmensrecherche.'
   })
 
   /**
@@ -117,7 +117,7 @@ function App(): React.ReactElement {
    */
   const handleNewChat = (): void => {
     setMessages([
-      { id: 1, text: 'Hallo! Wie kann ich dir heute helfen?', sender: 'ai' }
+      { id: 1, text: 'Hallo! Neue Jobsuche gestartet. Was für eine Position interessiert dich? 📋', sender: 'ai' }
     ])
     setSystemPromptApplied(false)
     setSidebarOpen(false)
@@ -151,7 +151,7 @@ function App(): React.ReactElement {
       setTimeout(() => {
         const aiResponse: Message = {
           id: messages.length + 2,
-          text: 'Das ist eine tolle Frage! Ich bin hier um dir zu helfen...',
+          text: 'Basierend auf deinem Profil habe ich einige passende Stellen gefunden. Die wichtigsten Anforderungen sind meist: 5+ Jahre Erfahrung, Python/SQL-Kenntnisse, und Interesse an ML. Möchtest du Hilfe bei der Bewerbung?',
           sender: 'ai'
         }
         setMessages((prev) => [...prev, aiResponse])
@@ -359,11 +359,11 @@ function App(): React.ReactElement {
 
         {/* ===== CHAT SETTINGS PANEL ===== */}
         {/* 
-          Floating Panel auf der rechten Seite für Chat-spezifische Einstellungen:
-          - Temperature Slider: Kreativität der AI (0=präzise, 1=kreativ)
+          Floating Panel auf der rechten Seite für Jobsuche-spezifische Einstellungen:
+          - Temperature Slider: Wie präzise vs. kreativ die Vorschläge sein sollen
           - Model Selector: Welches KI-Modell verwenden
-          - Writing Style Buttons: Tonalität der Antworten
-          - System Prompt: Custom Anweisung für diese Konversation
+          - Writing Style Buttons: Ton der Bewerbungsschreiben (Professionell, Standard, Enthusiastisch, Technisch)
+          - System Prompt: Wie die KI sich selbst in diesem Chat vorstellen sollte
         */}
         <div className={`settings-panel ${settingsPanelOpen ? 'open' : ''}`}>
           <div className="settings-header">
@@ -512,15 +512,15 @@ function App(): React.ReactElement {
 
             {/* Global System Prompt */}
             <div className="setting-item">
-              <label className="setting-label">📝 {t('globalSystemPrompt')}</label>
+              <label className="setting-label">🎯 {t('globalSystemPrompt')}</label>
               <textarea
                 value={globalSettings.globalSystemPrompt}
                 onChange={handleGlobalSystemPromptChange}
                 placeholder={t('globalSystemPromptPlaceholder')}
                 className="setting-textarea"
-                aria-label="Global system prompt"
+                aria-label="Job search profile"
               />
-              <p className="setting-hint">Wird als Standard für alle neuen Chats verwendet</p>
+              <p className="setting-hint">Beschreibe deine Jobsuche-Kriterien und Karriereziele</p>
             </div>
           </div>
         </div>
