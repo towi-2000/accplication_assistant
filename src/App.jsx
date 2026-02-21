@@ -1,183 +1,17 @@
 import { useState } from 'react'
 import './App.css'
+import data from './data.json'
+import {
+  getTranslation,
+  getTheme,
+  applyThemeToDocument,
+  processChatMessage,
+  isMessageValid,
+  getAvailableThemes,
+  createMessage
+} from './Functions'
 
-// Übersetzungen für alle unterstützten Sprachen
-const translations = {
-  de: {
-    title: 'AI Assistant',
-    subtitle: 'Dein intelligenter Helfer',
-    newChat: 'Neuer Chat',
-    chats: 'Chats',
-    settings: 'Einstellungen',
-    help: 'Hilfe',
-    chatSettings: 'Chat-Einstellungen',
-    temperature: 'Temperatur',
-    precise: 'Präzise',
-    creative: 'Kreativ',
-    model: 'Modell',
-    writingStyle: 'Schreibstil',
-    formal: 'Formal',
-    normal: 'Normal',
-    casual: 'Locker',
-    technical: 'Technisch',
-    systemPrompt: 'System-Prompt',
-    systemPromptPlaceholder: 'Definiere die Rolle und Persönlichkeit der KI...',
-    inputPlaceholder: 'Schreib eine Nachricht... (Shift + Enter für neue Zeile)',
-    disclaimer: 'Die KI kann Fehler machen. Überprüfe wichtige Informationen.',
-    globalSettings: 'Globale Einstellungen',
-    language: 'Sprache',
-    theme: 'Design',
-    globalSystemPrompt: 'Globaler Anfangsprompt',
-    globalSystemPromptPlaceholder: 'Standard-Rolle für alle neuen Chats...'
-  },
-  en: {
-    title: 'AI Assistant',
-    subtitle: 'Your intelligent helper',
-    newChat: 'New Chat',
-    chats: 'Chats',
-    settings: 'Settings',
-    help: 'Help',
-    chatSettings: 'Chat Settings',
-    temperature: 'Temperature',
-    precise: 'Precise',
-    creative: 'Creative',
-    model: 'Model',
-    writingStyle: 'Writing Style',
-    formal: 'Formal',
-    normal: 'Normal',
-    casual: 'Casual',
-    technical: 'Technical',
-    systemPrompt: 'System Prompt',
-    systemPromptPlaceholder: 'Define the role and personality of the AI...',
-    inputPlaceholder: 'Write a message... (Shift + Enter for new line)',
-    disclaimer: 'AI can make mistakes. Verify important information.',
-    globalSettings: 'Global Settings',
-    language: 'Language',
-    theme: 'Theme',
-    globalSystemPrompt: 'Global Initial Prompt',
-    globalSystemPromptPlaceholder: 'Default role for all new chats...'
-  },
-  fr: {
-    title: 'Assistant IA',
-    subtitle: 'Votre assistant intelligent',
-    newChat: 'Nouveau Chat',
-    chats: 'Chats',
-    settings: 'Paramètres',
-    help: 'Aide',
-    chatSettings: 'Paramètres du Chat',
-    temperature: 'Température',
-    precise: 'Précis',
-    creative: 'Créatif',
-    model: 'Modèle',
-    writingStyle: 'Style d\'Écriture',
-    formal: 'Formel',
-    normal: 'Normal',
-    casual: 'Décontracté',
-    technical: 'Technique',
-    systemPrompt: 'Invite Système',
-    systemPromptPlaceholder: 'Définir le rôle et la personnalité de l\'IA...',
-    inputPlaceholder: 'Écrivez un message... (Maj + Entrée pour nouvelle ligne)',
-    disclaimer: 'L\'IA peut faire des erreurs. Vérifiez les informations importantes.',
-    globalSettings: 'Paramètres Globaux',
-    language: 'Langue',
-    theme: 'Thème',
-    globalSystemPrompt: 'Invite Initiale Globale',
-    globalSystemPromptPlaceholder: 'Rôle par défaut pour tous les nouveaux chats...'
-  },
-  es: {
-    title: 'Asistente IA',
-    subtitle: 'Tu asistente inteligente',
-    newChat: 'Nuevo Chat',
-    chats: 'Chats',
-    settings: 'Configuración',
-    help: 'Ayuda',
-    chatSettings: 'Configuración del Chat',
-    temperature: 'Temperatura',
-    precise: 'Preciso',
-    creative: 'Creativo',
-    model: 'Modelo',
-    writingStyle: 'Estilo de Escritura',
-    formal: 'Formal',
-    normal: 'Normal',
-    casual: 'Casual',
-    technical: 'Técnico',
-    systemPrompt: 'Indicación del Sistema',
-    systemPromptPlaceholder: 'Define el rol y la personalidad de la IA...',
-    inputPlaceholder: 'Escribe un mensaje... (Mayús + Intro para nueva línea)',
-    disclaimer: 'La IA puede cometer errores. Verifica información importante.',
-    globalSettings: 'Configuración Global',
-    language: 'Idioma',
-    theme: 'Tema',
-    globalSystemPrompt: 'Indicación Inicial Global',
-    globalSystemPromptPlaceholder: 'Rol predeterminado para todos los chats nuevos...'
-  },
-  it: {
-    title: 'Assistente IA',
-    subtitle: 'Il tuo assistente intelligente',
-    newChat: 'Nuova Chat',
-    chats: 'Chat',
-    settings: 'Impostazioni',
-    help: 'Aiuto',
-    chatSettings: 'Impostazioni Chat',
-    temperature: 'Temperatura',
-    precise: 'Preciso',
-    creative: 'Creativo',
-    model: 'Modello',
-    writingStyle: 'Stile di Scrittura',
-    formal: 'Formale',
-    normal: 'Normale',
-    casual: 'Casual',
-    technical: 'Tecnico',
-    systemPrompt: 'Prompt di Sistema',
-    systemPromptPlaceholder: 'Definisci il ruolo e la personalità dell\'IA...',
-    inputPlaceholder: 'Scrivi un messaggio... (Maiusc + Invio per nuova riga)',
-    disclaimer: 'L\'IA può fare errori. Verifica le informazioni importanti.',
-    globalSettings: 'Impostazioni Globali',
-    language: 'Lingua',
-    theme: 'Tema',
-    globalSystemPrompt: 'Prompt Iniziale Globale',
-    globalSystemPromptPlaceholder: 'Ruolo predefinito per tutte le nuove chat...'
-  }
-}
-
-// Design-Themes
-const themes = {
-  light: {
-    name: 'Hell',
-    '--primary-color': '#10a37f',
-    '--dark-bg': '#ffffff',
-    '--sidebar-bg': '#f5f5f5',
-    '--text-color': '#333'
-  },
-  dark: {
-    name: 'Dunkel',
-    '--primary-color': '#10a37f',
-    '--dark-bg': '#1a1a1a',
-    '--sidebar-bg': '#0d0d0d',
-    '--text-color': '#ececec'
-  },
-  ocean: {
-    name: 'Ozean',
-    '--primary-color': '#0066cc',
-    '--dark-bg': '#1a2332',
-    '--sidebar-bg': '#0f1419',
-    '--text-color': '#e0e0e0'
-  },
-  forest: {
-    name: 'Wald',
-    '--primary-color': '#2d7a3a',
-    '--dark-bg': '#1b2d1f',
-    '--sidebar-bg': '#0f1612',
-    '--text-color': '#e8f0eb'
-  },
-  sunset: {
-    name: 'Sonnenuntergang',
-    '--primary-color': '#d97706',
-    '--dark-bg': '#2d1f0f',
-    '--sidebar-bg': '#1a1208',
-    '--text-color': '#f5e8d8'
-  }
-}
+const { themes } = data
 
 function App() {
   const [messages, setMessages] = useState([
@@ -187,6 +21,7 @@ function App() {
   const [conversations, setConversations] = useState([
     { id: 1, title: 'Neue Konversation' }
   ])
+  const [systemPromptApplied, setSystemPromptApplied] = useState(false)
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [settingsPanelOpen, setSettingsPanelOpen] = useState(false)
   const [globalSettingsOpen, setGlobalSettingsOpen] = useState(false)
@@ -204,30 +39,46 @@ function App() {
 
   // Hilfsfunktion für Übersetzungen
   const t = (key) => {
-    return translations[globalSettings.language]?.[key] || translations['de'][key] || key
-  }
-
-  // Theme anwenden
-  const applyTheme = (themeName) => {
-    const theme = themes[themeName]
-    Object.entries(theme).forEach(([key, value]) => {
-      if (key !== 'name') {
-        document.documentElement.style.setProperty(key, value)
-      }
-    })
+    return getTranslation(key, globalSettings.language)
   }
 
   const handleThemeChange = (themeName) => {
     setGlobalSettings({...globalSettings, theme: themeName})
-    applyTheme(themeName)
+    applyThemeToDocument(themeName)
   }
 
   const handleLanguageChange = (lang) => {
     setGlobalSettings({...globalSettings, language: lang})
   }
 
+  // Anfangsprompt beim Start anwenden
+  // TODO: In echtem Backend mit API-Call ersetzen
+  // const applySystemPrompt = () => {
+  //   if (globalSettings.globalSystemPrompt && !systemPromptApplied) {
+  //     // Hier würde der globale Anfangsprompt an das Modell gesendet
+  //     // z.B. als System Message in einem Chat Completion API Call
+  //     setSystemPromptApplied(true)
+  //   }
+  // }
+
+  const handleNewChat = () => {
+    setMessages([
+      { id: 1, text: 'Hallo! Wie kann ich dir heute helfen?', sender: 'ai' },
+    ])
+    setSystemPromptApplied(false)
+    setSidebarOpen(false)
+  }
+
   const handleSendMessage = () => {
-    if (input.trim()) {
+    if (isMessageValid(input)) {
+      // Anfangsprompt beim ersten Senden anwenden (falls vorhanden)
+      if (globalSettings.globalSystemPrompt && !systemPromptApplied) {
+        // TODO: Hier würde der globale Anfangsprompt an das Modell gesendet
+        // z.B. als System Message beim ersten API-Call nach dem Chat-Start
+        // sendToAI(globalSettings.globalSystemPrompt)
+        setSystemPromptApplied(true)
+      }
+
       const newMessage = { 
         id: messages.length + 1, 
         text: input, 
@@ -236,6 +87,8 @@ function App() {
       setMessages([...messages, newMessage])
       
       // Simulierte AI-Antwort
+      // TODO: Der echte API-Call würde den globalSystemPrompt + chatSettings.systemPrompt
+      // als Systeminstruktionen mitgeben
       setTimeout(() => {
         const aiResponse = { 
           id: messages.length + 2, 
@@ -266,13 +119,13 @@ function App() {
       {/* Sidebar */}
       <aside className={`sidebar ${sidebarOpen ? 'open' : ''}`}>
         <div className="sidebar-header">
-          <button className="new-chat-btn">
-            <span className="icon">💬</span> Neuer Chat
+          <button className="new-chat-btn" onClick={handleNewChat}>
+            <span className="icon">💬</span> {t('newChat')}
           </button>
         </div>
         
         <div className="conversations">
-          <h3 className="conversations-title">Chats</h3>
+          <h3 className="conversations-title">{t('chats')}</h3>
           {conversations.map(conv => (
             <div key={conv.id} className="conversation-item active" onClick={() => setSidebarOpen(false)}>
               {conv.title}
@@ -281,8 +134,13 @@ function App() {
         </div>
 
         <div className="sidebar-footer">
-          <button className="sidebar-btn">⚙️ Einstellungen</button>
-          <button className="sidebar-btn">❓ Hilfe</button>
+          <button 
+            className="sidebar-btn"
+            onClick={() => setGlobalSettingsOpen(true)}
+          >
+            ⚙️ {t('settings')}
+          </button>
+          <button className="sidebar-btn">❓ {t('help')}</button>
         </div>
       </aside>
 
@@ -292,16 +150,16 @@ function App() {
         <header className="chat-header">
           <div className="header-content">
             <div className="title-section">
-              <h1 className="app-title">🤖 AI Assistant</h1>
+              <h1 className="app-title">🤖 {t('title')}</h1>
               <button 
                 className="settings-btn"
                 onClick={() => setSettingsPanelOpen(!settingsPanelOpen)}
-                title="Chat-Einstellungen"
+                title={t('chatSettings')}
               >
                 ⚙️
               </button>
             </div>
-            <p className="app-subtitle">Dein intelligenter Helfer</p>
+            <p className="app-subtitle">{t('subtitle')}</p>
           </div>
         </header>
 
@@ -323,10 +181,15 @@ function App() {
           <div className="settings-overlay" onClick={() => setSettingsPanelOpen(false)} />
         )}
 
+        {/* Global Settings Overlay */}
+        {globalSettingsOpen && (
+          <div className="settings-overlay" onClick={() => setGlobalSettingsOpen(false)} />
+        )}
+
         {/* Settings Panel */}
         <div className={`settings-panel ${settingsPanelOpen ? 'open' : ''}`}>
           <div className="settings-header">
-            <h2 className="settings-title">Chat-Einstellungen</h2>
+            <h2 className="settings-title">{t('chatSettings')}</h2>
             <button 
               className="settings-close"
               onClick={() => setSettingsPanelOpen(false)}
@@ -339,7 +202,7 @@ function App() {
             {/* Temperature Slider */}
             <div className="setting-item">
               <div className="setting-label-container">
-                <label className="setting-label">🎚️ Temperatur</label>
+                <label className="setting-label">🎚️ {t('temperature')}</label>
                 <span className="setting-value">{chatSettings.temperature.toFixed(2)}</span>
               </div>
               <input 
@@ -351,12 +214,12 @@ function App() {
                 onChange={(e) => setChatSettings({...chatSettings, temperature: parseFloat(e.target.value)})}
                 className="slider"
               />
-              <p className="setting-hint">0 = Präzise, 1 = Kreativ</p>
+              <p className="setting-hint">0 = {t('precise')}, 1 = {t('creative')}</p>
             </div>
 
             {/* Model Selection */}
             <div className="setting-item">
-              <label className="setting-label">🤖 Modell</label>
+              <label className="setting-label">🤖 {t('model')}</label>
               <select 
                 value={chatSettings.model}
                 onChange={(e) => setChatSettings({...chatSettings, model: e.target.value})}
@@ -365,21 +228,26 @@ function App() {
                 <option value="gpt-4">GPT-4</option>
                 <option value="gpt-3.5">GPT-3.5 Turbo</option>
                 <option value="claude">Claude</option>
-                <option value="local">Lokales Modell</option>
+                <option value="local">{t('model')} lokal</option>
               </select>
             </div>
 
             {/* Writing Style */}
             <div className="setting-item">
-              <label className="setting-label">✍️ Schreibstil</label>
+              <label className="setting-label">✍️ {t('writingStyle')}</label>
               <div className="setting-buttons">
-                {['formal', 'normal', 'locker', 'technisch'].map(style => (
+                {[
+                  { key: 'formal', label: t('formal') },
+                  { key: 'normal', label: t('normal') },
+                  { key: 'locker', label: t('casual') },
+                  { key: 'technisch', label: t('technical') }
+                ].map(style => (
                   <button
-                    key={style}
-                    className={`style-btn ${chatSettings.writingStyle === style ? 'active' : ''}`}
-                    onClick={() => setChatSettings({...chatSettings, writingStyle: style})}
+                    key={style.key}
+                    className={`style-btn ${chatSettings.writingStyle === style.key ? 'active' : ''}`}
+                    onClick={() => setChatSettings({...chatSettings, writingStyle: style.key})}
                   >
-                    {style.charAt(0).toUpperCase() + style.slice(1)}
+                    {style.label}
                   </button>
                 ))}
               </div>
@@ -387,13 +255,74 @@ function App() {
 
             {/* System Prompt */}
             <div className="setting-item">
-              <label className="setting-label">📝 System-Prompt</label>
+              <label className="setting-label">📝 {t('systemPrompt')}</label>
               <textarea 
                 value={chatSettings.systemPrompt}
                 onChange={(e) => setChatSettings({...chatSettings, systemPrompt: e.target.value})}
-                placeholder="Definiere die Rolle und Persönlichkeit der KI..."
+                placeholder={t('systemPromptPlaceholder')}
                 className="setting-textarea"
               />
+            </div>
+          </div>
+        </div>
+
+        {/* Global Settings Panel */}
+        <div className={`settings-panel ${globalSettingsOpen ? 'open' : ''}`}>
+          <div className="settings-header">
+            <h2 className="settings-title">{t('globalSettings')}</h2>
+            <button 
+              className="settings-close"
+              onClick={() => setGlobalSettingsOpen(false)}
+            >
+              ✕
+            </button>
+          </div>
+
+          <div className="settings-content">
+            {/* Language Selection */}
+            <div className="setting-item">
+              <label className="setting-label">🌍 {t('language')}</label>
+              <div className="language-grid">
+                {Object.entries(translations).map(([lang, _]) => (
+                  <button
+                    key={lang}
+                    className={`language-btn ${globalSettings.language === lang ? 'active' : ''}`}
+                    onClick={() => handleLanguageChange(lang)}
+                  >
+                    {lang.toUpperCase()}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Theme Selection */}
+            <div className="setting-item">
+              <label className="setting-label">🎨 {t('theme')}</label>
+              <div className="theme-grid">
+                {Object.entries(themes).map(([themeKey, themeData]) => (
+                  <button
+                    key={themeKey}
+                    className={`theme-btn ${globalSettings.theme === themeKey ? 'active' : ''}`}
+                    onClick={() => handleThemeChange(themeKey)}
+                    title={themeData.name}
+                  >
+                    <span className="theme-preview" style={{backgroundColor: themeData.primaryColor}}></span>
+                    {themeData.name}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Global System Prompt */}
+            <div className="setting-item">
+              <label className="setting-label">📝 {t('globalSystemPrompt')}</label>
+              <textarea 
+                value={globalSettings.globalSystemPrompt}
+                onChange={(e) => setGlobalSettings({...globalSettings, globalSystemPrompt: e.target.value})}
+                placeholder={t('globalSystemPromptPlaceholder')}
+                className="setting-textarea"
+              />
+              <p className="setting-hint">Wird als Standard für alle neuen Chats verwendet</p>
             </div>
           </div>
         </div>
@@ -405,7 +334,7 @@ function App() {
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyPress={handleKeyPress}
-              placeholder="Schreib eine Nachricht... (Shift + Enter für neue Zeile)"
+              placeholder={t('inputPlaceholder')}
               className="message-input"
             />
             <button 
@@ -415,7 +344,7 @@ function App() {
               ➤
             </button>
           </div>
-          <p className="input-hint">Die KI kann Fehler machen. Überprüfe wichtige Informationen.</p>
+          <p className="input-hint">{t('disclaimer')}</p>
         </div>
       </main>
     </div>
