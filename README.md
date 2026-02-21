@@ -1,3 +1,6 @@
+# Description
+This is a application assistant that helps you write and search for your personal job applications
+
 # React + Vite
 
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
