@@ -25,7 +25,12 @@
       "language": "Sprache",
       "theme": "Design",
       "globalSystemPrompt": "Karriereziele",
-      "globalSystemPromptPlaceholder": "Deine beruflichen Ziele, Branche und Anforderungen..."
+      "globalSystemPromptPlaceholder": "Deine beruflichen Ziele, Branche und Anforderungen...",
+      "helpTitle": "Hilfe & Anleitung",
+      "helpText": "Willkommen beim KI-gestützten Bewerbungs-Assistenten!\n\n📌 Schnelleinstieg:\n1. Beschreibe dein Profil in den Einstellungen\n2. Stelle Fragen zu Jobs oder Bewerbungen\n3. Die KI hilft dir bei der Suche und Analyse\n\n🚀 Features:\n• Jobsuche und Recherche\n• Bewerbungsoptimierung\n• Web-Crawler für Unternehmensinfos\n• Datei-Upload (PDF, Lebenslauf, Anschreiben)\n• Mehrsprachig & Offline-Modi\n\n🔐 Sicherheit:\n• Lokal gespeichert (SQLite)\n• Keine Daten-Weitergabe\n• API-Keys verschlüsselt\n\n💡 Tipps:\n- Shift + Enter für neue Zeile\n- Probiere verschiedene KI-Services\n- Nutze System-Prompts für bessere Ergebnisse\n\n❓ Fragen? Siehe die vollständige Dokumentation in der README.md",
+      "fileUpload": "Datei hochladen",
+      "fileUploadGuide": "📎 PDF, Bilder & Dokumente hochladen. Die Datei wird an die KI gesendet.",
+      "languageName": "Deutsch"
     },
     "en": {
       "title": "Job Application Assistant",
@@ -52,7 +57,12 @@
       "language": "Language",
       "theme": "Theme",
       "globalSystemPrompt": "Career Goals",
-      "globalSystemPromptPlaceholder": "Your professional goals, industry, and requirements..."
+      "globalSystemPromptPlaceholder": "Your professional goals, industry, and requirements...",
+      "helpTitle": "Help & Guide",
+      "helpText": "Welcome to the AI-powered Job Application Assistant!\n\n📌 Quick Start:\n1. Describe your profile in Settings\n2. Ask questions about jobs or applications\n3. AI helps you search and analyze\n\n🚀 Features:\n• Job search and research\n• Application optimization\n• Web crawler for company info\n• File upload (PDF, resume, cover letter)\n• Multilingual & offline modes\n\n🔐 Security:\n• Stored locally (SQLite)\n• No data sharing\n• API keys encrypted\n\n💡 Tips:\n- Shift + Enter for new line\n- Try different AI services\n- Use system prompts for better results\n\n❓ Questions? See full documentation in README.md",
+      "fileUpload": "Upload File",
+      "fileUploadGuide": "📎 Upload PDFs, images & documents. File will be sent to AI.",
+      "languageName": "English"
     },
     "fr": {
       "title": "Assistant de Candidature",
@@ -79,7 +89,12 @@
       "language": "Langue",
       "theme": "Thème",
       "globalSystemPrompt": "Objectifs de Carrière",
-      "globalSystemPromptPlaceholder": "Vos objectifs professionnels, secteur d'activité et conditions..."
+      "globalSystemPromptPlaceholder": "Vos objectifs professionnels, secteur d'activité et conditions...",
+      "helpTitle": "Aide & Guide",
+      "helpText": "Bienvenue dans l'Assistant de Candidature alimenté par l'IA!\n\n📌 Démarrage rapide:\n1. Décrivez votre profil dans les Paramètres\n2. Posez des questions sur les emplois ou les candidatures\n3. L'IA vous aide à chercher et analyser\n\n🚀 Fonctionnalités:\n• Recherche et recherche d'emploi\n• Optimisation des candidatures\n• Web crawler pour les infos entreprise\n• Upload de fichiers (PDF, CV, lettre)\n• Multilingue & modes hors ligne\n\n🔐 Sécurité:\n• Stocké localement (SQLite)\n• Pas de partage de données\n• Clés API cryptées\n\n💡 Conseils:\n- Maj + Entrée pour nouvelle ligne\n- Essayez différents services IA\n- Utilisez les invites système pour de meilleurs résultats\n\n❓ Questions? Voir la documentation complète dans README.md",
+      "fileUpload": "Télécharger un fichier",
+      "fileUploadGuide": "📎 Téléchargez des PDF, des images et des documents. Le fichier sera envoyé à l'IA.",
+      "languageName": "Français"
     },
     "es": {
       "title": "Asistente de Solicitudes de Empleo",
@@ -106,7 +121,12 @@
       "language": "Idioma",
       "theme": "Tema",
       "globalSystemPrompt": "Objetivos Profesionales",
-      "globalSystemPromptPlaceholder": "Tus objetivos profesionales, sector e requisitos..."
+      "globalSystemPromptPlaceholder": "Tus objetivos profesionales, sector e requisitos...",
+      "helpTitle": "Ayuda y Guía",
+      "helpText": "¡Bienvenido al Asistente de Solicitudes de Empleo impulsado por IA!\n\n📌 Inicio rápido:\n1. Describe tu perfil en Configuración\n2. Haz preguntas sobre empleos o solicitudes\n3. La IA te ayuda a buscar y analizar\n\n🚀 Características:\n• Búsqueda y búsqueda de empleos\n• Optimización de solicitudes\n• Rastreador web para información de empresas\n• Carga de archivos (PDF, CV, carta)\n• Multilingüe y modos sin conexión\n\n🔐 Seguridad:\n• Almacenado localmente (SQLite)\n• Sin compartir datos\n• Claves API encriptadas\n\n💡 Consejos:\n- Mayús + Intro para nueva línea\n- Intenta diferentes servicios de IA\n- Usa indicaciones del sistema para mejores resultados\n\n❓ ¿Preguntas? Ver documentación completa en README.md",
+      "fileUpload": "Cargar archivo",
+      "fileUploadGuide": "📎 Carga PDFs, imágenes y documentos. El archivo se enviará a la IA.",
+      "languageName": "Español"
     },
     "it": {
       "title": "Assistente di Candidatura",
@@ -133,7 +153,12 @@
       "language": "Lingua",
       "theme": "Tema",
       "globalSystemPrompt": "Obiettivi di Carriera",
-      "globalSystemPromptPlaceholder": "I tuoi obiettivi professionali, settore e requisiti..."
+      "globalSystemPromptPlaceholder": "I tuoi obiettivi professionali, settore e requisiti...",
+      "helpTitle": "Aiuto e Guida",
+      "helpText": "Benvenuto nell'Assistente di Candidatura alimentato da IA!\n\n📌 Avvio rapido:\n1. Descrivi il tuo profilo in Impostazioni\n2. Fai domande su lavori o candidature\n3. L'IA ti aiuta a cercare e analizzare\n\n🚀 Caratteristiche:\n• Ricerca e ricerca di lavoro\n• Ottimizzazione delle candidature\n• Web crawler per informazioni aziendali\n• Caricamento di file (PDF, CV, lettera)\n• Multilingue e modalità offline\n\n🔐 Sicurezza:\n• Archiviato localmente (SQLite)\n• Nessuna condivisione di dati\n• Chiavi API crittografate\n\n💡 Suggerimenti:\n- Maiusc + Invio per nuova riga\n- Prova diversi servizi di IA\n- Utilizza i prompt del sistema per risultati migliori\n\n❓ Domande? Consulta la documentazione completa in README.md",
+      "fileUpload": "Carica file",
+      "fileUploadGuide": "📎 Carica PDF, immagini e documenti. Il file verrà inviato all'IA.",
+      "languageName": "Italiano"
     }
   },
   "themes": {

@@ -1559,7 +1559,71 @@ body {
   .language-grid {
     grid-template-columns: repeat(2, 1fr);
   }
+
+  .setting-input {
+    width: 100%;
+    padding: 6px 8px;
+    font-size: 12px;
+  }
+
+  .setting-btn {
+    width: 100%;
+    padding: 6px 8px;
+    font-size: 12px;
+  }
 }
+
+/* ===== AI SERVICE SPECIFIC STYLES ===== */
+
+.setting-input {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  background-color: var(--dark-bg);
+  color: var(--text-color);
+  font-size: 14px;
+  margin-top: 6px;
+}
+
+.setting-input:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 2px rgba(16, 163, 127, 0.1);
+}
+
+.setting-btn {
+  padding: 8px 12px;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  background-color: var(--dark-bg);
+  color: var(--text-color);
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.3s ease;
+}
+
+.setting-btn:hover {
+  background-color: var(--primary-color);
+  color: white;
+  border-color: var(--primary-color);
+}
+
+.setting-error {
+  padding: 10px;
+  background-color: #ff6b6b;
+  border-radius: 4px;
+  color: white;
+  font-size: 12px;
+}
+
+.setting-hint {
+  font-size: 12px;
+  color: var(--text-color);
+  opacity: 0.7;
+  margin-top: 4px;
+}
+
 @media (max-width: 380px) {
   .sidebar {
     width: 85vw;

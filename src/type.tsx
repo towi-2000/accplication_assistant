@@ -235,3 +235,184 @@ export type OperationResult<T> = {
   error?: string
   statusCode?: number
 }
+
+// ===== AI SERVICE TYPES =====
+
+/**
+ * Unterstützte KI-Service Provider
+ * Jeder Provider hat eigene API-Schnittstelle und Authentifizierung
+ */
+export type AiProviderType = 'openai' | 'claude' | 'gemini' | 'local' | 'ollama'
+
+/**
+ * KI-Service Konfiguration mit API Keys und Einstellungen
+ * Eine Instanz pro Provider
+ * Wird verschlüsselt gespeichert
+ */
+export type AiServiceConfig = {
+  provider: AiProviderType         // Welcher Provider ('openai', 'claude', etc.)
+  apiKey: string                   // API-Schlüssel (verschlüsselt)
+  apiUrl?: string                  // Custom endpoint (für Ollama, Local, etc.)
+  model: string                    // Modell-ID (z.B. 'gpt-4', 'claude-3-opus')
+  maxTokens?: number               // Response Limit pro Anfrage
+  temperature: number              // Kreativität: 0=präzise, 2=kreativ
+  topP?: number                    // Nucleus sampling (0-1)
+  frequencyPenalty?: number        // -2 bis 2
+  presencePenalty?: number         // -2 bis 2
+}
+
+/**
+ * Konfigurierte KI-Services des Benutzers
+ * Key = Service-ID, Value = Config
+ * Wird in localStorage gespeichert (verschlüsselt)
+ */
+export type AiServicesConfig = {
+  [key: string]: AiServiceConfig
+}
+
+/**
+ * Erweiterte Chat-Nachricht mit KI-Provider Metadaten
+ * System soll wissen welcher Service die Antwort generiert hat
+ */
+export type ChatMessage = Message & {
+  aiProvider?: AiProviderType      // Welcher Service hat geantwortet?
+  aiModel?: string                 // Welches Modell?
+  tokens?: {                       // Token-Verbrauch (für Kosten-Tracking)
+    prompt: number
+    completion: number
+    total: number
+  }
+  generatedAt?: string             // ISO Timestamp
+}
+
+/**
+ * Standardisierte Response aller KI-Services
+ * Alle Provider werden auf diesen Format genormalisiert
+ * Macht Provider-Wechsel transparent
+ */
+export type AiServiceResponse = {
+  content: string                  // Antwort-Text
+  provider: AiProviderType         // Welcher Provider
+  model: string                    // Welches Modell
+  tokens: {                        // Tokens für Billing + Limits
+    prompt: number
+    completion: number
+    total: number
+  }
+  finishReason: 'stop' | 'length' | 'content_filter' | 'error'
+  error?: string                   // Falls Fehler aufgetreten
+}
+
+/**
+ * Standardisierter Request an AI Service
+ * Wird in provider-spezifische Formate konvertiert
+ */
+export type AiServiceRequest = {
+  messages: Array<{                // Nachrichten-Verlauf
+    role: 'system' | 'user' | 'assistant'
+    content: string
+  }>
+  temperature?: number
+  maxTokens?: number
+  topP?: number
+  frequencyPenalty?: number
+  presencePenalty?: number
+}
+
+/**
+ * Metadaten zu verfügbarem Modell
+ * Verwendet für Dropdown-Auswahl in UI
+ */
+export type AiModelInfo = {
+  provider: AiProviderType
+  modelId: string                  // Modell-Identifier für API
+  name: string                     // Anzeigename
+  maxTokens: number                // Context-Fenster-Größe
+  costPer1kPromptTokens: number    // $ pro 1000 Prompt-Tokens
+  costPer1kCompletionTokens: number// $ pro 1000 Completion-Tokens
+  released: string                 // ISO Date
+  deprecated?: string              // ISO Date (falls veraltet)
+}
+
+/**
+ * Alle verfügbaren Models
+ * Wird beim Laden der App initialisiert
+ */
+export type AvailableAiModels = AiModelInfo[]
+
+/**
+ * Validierungsergebnis für API-Keys
+ * Vor Speichern prüfen ob Key funktioniert
+ */
+export type AiServiceValidation = {
+  valid: boolean
+  provider: AiProviderType
+  error?: string
+  message?: string
+}
+
+// ===== ENHANCED SEARCH TYPES =====
+
+/**
+ * Erweiterte Suchparameter für Datenbank-Abfragen
+ * Nicht nur Volltext-Suche, sondern auch Filter
+ */
+export type AdvancedSearchParams = {
+  query: string                          // Suchtext
+  searchIn: ('url' | 'title' | 'content')[]  // In welche Felder suchen?
+  startDate?: string                     // ISO Date
+  endDate?: string                       // ISO Date
+  minLength?: number                     // Minimum Content-Länge
+  maxLength?: number                     // Maximum Content-Länge
+  statusCode?: number                    // HTTP-Status filtern
+  limit?: number                         // Limit
+  offset?: number                        // Offset für Pagination
+}
+
+/**
+ * Such-Ergebnis mit Ranking-Score
+ * Zeigt wie relevant das Ergebnis ist (BM25/TF-IDF)
+ */
+export type SearchResultItem = WebPageRecord & {
+  relevanceScore: number                 // 0-100 (höher = besser)
+  matchedFields: ('url' | 'title' | 'content')[]  // Wo gefunden?
+  snippets: string[]                     // Highlighted Matches
+}
+
+/**
+ * Erweiterte Such-Antwort mit Metadaten
+ */
+export type AdvancedSearchResponse = {
+  items: SearchResultItem[]
+  totalCount: number
+  limit: number
+  offset: number
+  query: string
+  executionTime: number                  // Millisekunden
+}
+
+// ===== FILE UPLOAD TYPES =====
+
+/**
+ * Hochgeladene Datei mit Metadaten
+ */
+export type UploadedFile = {
+  id: string                             // Eindeutige ID
+  name: string                           // Dateiname
+  type: string                           // MIME-Type (application/pdf, image/png, etc.)
+  size: number                           // Dateigröße in Bytes
+  base64Content: string                  // Base64-kodierter Inhalt
+  uploadedAt: string                     // ISO Timestamp
+  description?: string                   // Kurze Beschreibung
+}
+
+/**
+ * Datei-Upload Response vom Server
+ */
+export type FileUploadResponse = {
+  success: boolean
+  fileId?: string
+  fileName?: string
+  message?: string
+  error?: string
+}

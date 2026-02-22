@@ -226,3 +226,339 @@ app.post('/api/preview', async (req, res) => {
 app.listen(port, () => {
   console.log(`API server running on http://localhost:${port}`)
 })
+
+// ===== AI SERVICE ENDPOINTS =====
+
+/**
+ * POST /api/ai/chat
+ * Sendet eine Nachricht an den ausgewählten AI Service
+ * Body: { provider, apiKey, model, temperature, messages, chatId }
+ */
+app.post('/api/ai/chat', async (req, res) => {
+  const { provider, apiKey, model, temperature, messages, chatId } = req.body || {}
+
+  if (!provider || !model || !Array.isArray(messages) || messages.length === 0) {
+    return res.status(400).json({
+      error: 'provider, model, and messages are required',
+      success: false
+    })
+  }
+
+  try {
+    // Dispatch zum richtigen Service
+    let response
+
+    if (provider === 'openai') {
+      response = await callOpenAI(apiKey, model, messages, temperature)
+    } else if (provider === 'claude') {
+      response = await callClaude(apiKey, model, messages, temperature)
+    } else if (provider === 'gemini') {
+      response = await callGemini(apiKey, model, messages, temperature)
+    } else if (provider === 'ollama') {
+      response = await callOllama(req.body.apiUrl || 'http://localhost:11434', model, messages, temperature)
+    } else if (provider === 'local') {
+      response = await callLocal(messages)
+    } else {
+      return res.status(400).json({
+        error: `Unknown provider: ${provider}`,
+        success: false
+      })
+    }
+
+    return res.json({
+      success: true,
+      content: response,
+      provider,
+      model
+    })
+  } catch (error) {
+    console.error(`AI Service Error (${provider}):`, error)
+    return res.status(500).json({
+      success: false,
+      error: error.message
+    })
+  }
+})
+
+/**
+ * GET /api/ai/services
+ * Gibt eine Liste aller verfügbaren AI Services zurück
+ */
+app.get('/api/ai/services', (req, res) => {
+  const services = [
+    {
+      provider: 'openai',
+      name: 'OpenAI',
+      models: ['gpt-4-turbo', 'gpt-4', 'gpt-3.5-turbo'],
+      requiresKey: true,
+      description: 'Professional AI models from OpenAI'
+    },
+    {
+      provider: 'claude',
+      name: 'Anthropic Claude',
+      models: ['claude-3-opus-20240229', 'claude-3-sonnet-20240229'],
+      requiresKey: true,
+      description: 'Advanced AI models from Anthropic'
+    },
+    {
+      provider: 'gemini',
+      name: 'Google Gemini',
+      models: ['gemini-pro'],
+      requiresKey: true,
+      description: 'Multimodal AI models from Google'
+    },
+    {
+      provider: 'ollama',
+      name: 'Ollama (Local)',
+      models: ['llama2', 'mistral', 'neural-chat'],
+      requiresKey: false,
+      description: 'Local open-source models via Ollama'
+    },
+    {
+      provider: 'local',
+      name: 'Local Echo',
+      models: ['echo'],
+      requiresKey: false,
+      description: 'Simple local echo service for testing'
+    }
+  ]
+
+  return res.json({ services })
+})
+
+/**
+ * POST /api/ai/validate-key
+ * Validiert einen API-Key für einen Service
+ * Body: { provider, apiKey }
+ */
+app.post('/api/ai/validate-key', async (req, res) => {
+  const { provider, apiKey } = req.body || {}
+
+  if (!provider) {
+    return res.status(400).json({ valid: false, error: 'provider is required' })
+  }
+
+  try {
+    let valid = false
+
+    if (provider === 'openai') {
+      valid = await validateOpenAIKey(apiKey)
+    } else if (provider === 'claude') {
+      valid = await validateClaudeKey(apiKey)
+    } else if (provider === 'gemini') {
+      valid = await validateGeminiKey(apiKey)
+    } else if (provider === 'ollama') {
+      valid = await validateOllamaConnection(req.body.apiUrl || 'http://localhost:11434')
+    } else if (provider === 'local') {
+      valid = true
+    }
+
+    return res.json({
+      valid,
+      provider,
+      message: valid ? 'Key is valid' : 'Key is invalid'
+    })
+  } catch (error) {
+    console.error(`Key validation error (${provider}):`, error)
+    return res.status(500).json({
+      valid: false,
+      error: error.message
+    })
+  }
+})
+
+// ===== AI SERVICE IMPLEMENTATIONS =====
+
+/**
+ * OpenAI API Call
+ */
+async function callOpenAI(apiKey, model, messages, temperature = 0.7) {
+  const response = await fetch('https://api.openai.com/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${apiKey}`
+    },
+    body: JSON.stringify({
+      model,
+      messages,
+      temperature,
+      max_tokens: 1000
+    })
+  })
+
+  if (!response.ok) {
+    const error = await response.json()
+    throw new Error(error.error?.message || 'OpenAI API error')
+  }
+
+  const data = await response.json()
+  return data.choices[0]?.message?.content || 'No response'
+}
+
+/**
+ * Claude API Call
+ */
+async function callClaude(apiKey, model, messages, temperature = 0.7) {
+  // Filter system message
+  const systemMessage = messages.find(m => m.role === 'system')?.content || ''
+  const userMessages = messages.filter(m => m.role !== 'system')
+
+  const response = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-api-key': apiKey,
+      'anthropic-version': '2023-06-01'
+    },
+    body: JSON.stringify({
+      model,
+      max_tokens: 1000,
+      system: systemMessage,
+      messages: userMessages.map(m => ({
+        role: m.role === 'assistant' ? 'assistant' : 'user',
+        content: m.content
+      })),
+      temperature
+    })
+  })
+
+  if (!response.ok) {
+    const error = await response.json()
+    throw new Error(error.error?.message || 'Claude API error')
+  }
+
+  const data = await response.json()
+  return data.content[0]?.text || 'No response'
+}
+
+/**
+ * Gemini API Call
+ */
+async function callGemini(apiKey, model, messages, temperature = 0.7) {
+  const contents = messages
+    .filter(m => m.role !== 'system')
+    .map(m => ({
+      role: m.role === 'assistant' ? 'model' : 'user',
+      parts: [{ text: m.content }]
+    }))
+
+  const response = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        contents,
+        generationConfig: {
+          temperature,
+          maxOutputTokens: 1000
+        }
+      })
+    }
+  )
+
+  if (!response.ok) {
+    const error = await response.json()
+    throw new Error(error.error?.message || 'Gemini API error')
+  }
+
+  const data = await response.json()
+  return data.candidates[0]?.content?.parts[0]?.text || 'No response'
+}
+
+/**
+ * Ollama API Call (Local)
+ */
+async function callOllama(baseUrl, model, messages, temperature = 0.7) {
+  const response = await fetch(`${baseUrl}/api/chat`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      model,
+      messages,
+      temperature,
+      stream: false
+    })
+  })
+
+  if (!response.ok) {
+    throw new Error(`Ollama error: ${response.status}`)
+  }
+
+  const data = await response.json()
+  return data.message?.content || 'No response'
+}
+
+/**
+ * Local Echo Service (für Demo/Testing)
+ */
+async function callLocal(messages) {
+  const lastMessage = messages[messages.length - 1]?.content || ''
+  return `[LOCAL RESPONSE] You said: ${lastMessage}`
+}
+
+// ===== API KEY VALIDATION FUNCTIONS =====
+
+/**
+ * Validiert OpenAI API Key
+ */
+async function validateOpenAIKey(apiKey) {
+  try {
+    const response = await fetch('https://api.openai.com/v1/models', {
+      headers: {
+        'Authorization': `Bearer ${apiKey}`
+      }
+    })
+    return response.ok
+  } catch (e) {
+    return false
+  }
+}
+
+/**
+ * Validiert Claude API Key
+ */
+async function validateClaudeKey(apiKey) {
+  try {
+    const response = await fetch('https://api.anthropic.com/v1/models', {
+      headers: {
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01'
+      }
+    })
+    return response.ok
+  } catch (e) {
+    return false
+  }
+}
+
+/**
+ * Validiert Gemini API Key
+ */
+async function validateGeminiKey(apiKey) {
+  try {
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro?key=${apiKey}`
+    )
+    return response.ok
+  } catch (e) {
+    return false
+  }
+}
+
+/**
+ * Validiert Ollama Connection
+ */
+async function validateOllamaConnection(baseUrl) {
+  try {
+    const response = await fetch(`${baseUrl}/api/tags`)
+    return response.ok
+  } catch (e) {
+    return false
+  }
+}

@@ -13,7 +13,7 @@
  * - Settings-Panels: Floating Panels für Job-Such-Einstellungen und globale Einstellungen
  */
 
-import React, { useState, ChangeEvent, KeyboardEvent } from 'react'
+import React, { useState, ChangeEvent, KeyboardEvent, useEffect } from 'react'
 import './App.css'
 import data from './data.json'
 import type {
@@ -118,6 +118,23 @@ function App(): React.ReactElement {
     systemPrompt: 'Ich bin ein erfahrener Recruiter und Karriereberater. Ich helfe bei der Jobsuche, Bewerbungserstellung und Unternehmensrecherche.'
   })
 
+  // ========== AI SERVICE STATE ==========
+  const [aiProvider, setAiProvider] = useState<string>('local')
+  const [aiApiKey, setAiApiKey] = useState<string>('')
+  const [aiApiUrl, setAiApiUrl] = useState<string>('http://localhost:11434')
+  const [aiLoading, setAiLoading] = useState<boolean>(false)
+  const [aiError, setAiError] = useState<string>('')
+  const [availableServices, setAvailableServices] = useState<any[]>([])
+  const [showApiKeyInput, setShowApiKeyInput] = useState<boolean>(false)
+
+  // ========== FILE UPLOAD STATE ==========
+  const [uploadedFiles, setUploadedFiles] = useState<Array<{ id: string; name: string; size: number }>>([])
+  const [fileUploadError, setFileUploadError] = useState<string>('')
+  const [fileUploadLoading, setFileUploadLoading] = useState<boolean>(false)
+
+  // ========== MODAL STATE ==========
+  const [helpModalOpen, setHelpModalOpen] = useState<boolean>(false)
+
   /**
    * Translation helper function
    * Gibt den übersetzten Text für einen Key in der aktuellen Sprache zurück
@@ -125,6 +142,27 @@ function App(): React.ReactElement {
   const t = (key: string): string => {
     return getTranslation(key, globalSettings.language)
   }
+
+  // ========== EFFECTS ==========
+
+  /**
+   * Load available AI services on component mount
+   */
+  useEffect(() => {
+    const loadServices = async () => {
+      try {
+        const response = await fetch('/api/ai/services')
+        if (response.ok) {
+          const data = await response.json()
+          setAvailableServices(data.services || [])
+        }
+      } catch (error) {
+        console.error('Failed to load AI services:', error)
+      }
+    }
+
+    loadServices()
+  }, [])
 
   // ========== EVENT HANDLER ==========
 
@@ -216,40 +254,138 @@ function App(): React.ReactElement {
   }
 
   /**
+   * Handle file upload
+   * Validiert und speichert hochgeladene Dateien
+   */
+  const handleFileUpload = async (e: ChangeEvent<HTMLInputElement>): Promise<void> => {
+    const files = e.currentTarget.files
+    if (!files) return
+
+    setFileUploadError('')
+    setFileUploadLoading(true)
+
+    try {
+      const newFiles: typeof uploadedFiles = []
+
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i]
+        
+        // Validate file
+        if (file.size > 10 * 1024 * 1024) { // 10MB limit
+          setFileUploadError(`${file.name} ist zu groß (Max. 10MB)`)
+          continue
+        }
+
+        // Create file entry
+        const fileId = `${Date.now()}-${i}`
+        newFiles.push({
+          id: fileId,
+          name: file.name,
+          size: file.size
+        })
+      }
+
+      setUploadedFiles(prev => [...prev, ...newFiles])
+
+      // Reset input
+      e.currentTarget.value = ''
+    } catch (error) {
+      const errorMsg = error instanceof Error ? error.message : 'Fehler beim hochladen'
+      setFileUploadError(errorMsg)
+    } finally {
+      setFileUploadLoading(false)
+    }
+  }
+
+  /**
    * Send a new message
    * Validiert die Eingabe, erstellt eine User-Nachricht,
-   * speichert sie und simuliert eine KI-Antwort (TODO: echte API)
+   * speichert sie und ruft den KI-Service auf für eine Antwort
    */
-  const handleSendMessage = (): void => {
-    if (isMessageValid(input)) {
-      // Globales System-Prompt einmalig beim ersten Senden anwenden
-      if (globalSettings.globalSystemPrompt && !systemPromptApplied) {
-        // TODO: Send global system prompt to AI backend
-        // sendToAI(globalSettings.globalSystemPrompt)
-        setSystemPromptApplied(true)
-      }
+  const handleSendMessage = async (): Promise<void> => {
+    if (!isMessageValid(input)) {
+      return
+    }
 
-      // User-Nachricht erstellen und zu Historia hinzufügen
-      const newMessage: Message = {
-        id: messages.length + 1,
-        text: input,
-        sender: 'user'
-      }
-      setMessages([...messages, newMessage])
+    // Globales System-Prompt einmalig beim ersten Senden anwenden
+    if (globalSettings.globalSystemPrompt && !systemPromptApplied) {
+      setSystemPromptApplied(true)
+    }
 
-      // Simulate AI response
-      // TODO: Replace with actual API call including globalSystemPrompt + chatSettings.systemPrompt
-      // Würde in echtem System hier die API aufrufen statt setTimeout
-      setTimeout(() => {
-        const aiResponse: Message = {
-          id: messages.length + 2,
-          text: 'Basierend auf deinem Profil habe ich einige passende Stellen gefunden. Die wichtigsten Anforderungen sind meist: 5+ Jahre Erfahrung, Python/SQL-Kenntnisse, und Interesse an ML. Möchtest du Hilfe bei der Bewerbung?',
-          sender: 'ai'
+    // User-Nachricht erstellen und zu Historia hinzufügen
+    const newMessage: Message = {
+      id: messages.length + 1,
+      text: input,
+      sender: 'user'
+    }
+    setMessages([...messages, newMessage])
+    setInput('')
+
+    // AI-Antwort abrufen
+    setAiLoading(true)
+    setAiError('')
+
+    try {
+      // Prepare messages for API
+      const messagesForApi = [
+        {
+          role: 'system' as const,
+          content: globalSettings.globalSystemPrompt + '\n\n' + chatSettings.systemPrompt
+        },
+        ...messages.map(msg => ({
+          role: msg.sender === 'user' ? ('user' as const) : ('assistant' as const),
+          content: msg.text
+        })),
+        {
+          role: 'user' as const,
+          content: input
         }
-        setMessages((prev) => [...prev, aiResponse])
-      }, 500)
+      ]
 
-      setInput('')
+      // Call AI Service API
+      const response = await fetch('/api/ai/chat', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          provider: aiProvider,
+          apiKey: aiApiKey || undefined,
+          apiUrl: aiApiUrl || undefined,
+          model: chatSettings.model,
+          temperature: chatSettings.temperature,
+          messages: messagesForApi,
+          chatId: activeConversationId
+        })
+      })
+
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.error || 'Failed to get AI response')
+      }
+
+      const data = await response.json()
+
+      // Add AI response to messages
+      const aiResponse: Message = {
+        id: messages.length + 2,
+        text: data.content || 'Keine Antwort erhalten',
+        sender: 'ai'
+      }
+      setMessages((prev) => [...prev, newMessage, aiResponse])
+    } catch (error) {
+      const errorMsg = error instanceof Error ? error.message : 'Unbekannter Fehler'
+      setAiError(errorMsg)
+
+      // Add error message
+      const errorMessage: Message = {
+        id: messages.length + 2,
+        text: `❌ Fehler bei AI-Anfrage: ${errorMsg}`,
+        sender: 'ai'
+      }
+      setMessages((prev) => [...prev, newMessage, errorMessage])
+    } finally {
+      setAiLoading(false)
     }
   }
 
@@ -522,7 +658,11 @@ function App(): React.ReactElement {
           >
             ⚙️ {t('settings')}
           </button>
-          <button className="sidebar-btn" aria-label="Help">
+          <button 
+            className="sidebar-btn" 
+            onClick={() => setHelpModalOpen(true)}
+            aria-label="Help"
+          >
             ❓ {t('help')}
           </button>
         </div>
@@ -571,6 +711,49 @@ function App(): React.ReactElement {
 
           {/* ===== INPUT AREA ===== */}
           <div className="input-area">
+            {/* Datei-Upload-Bereich */}
+            {uploadedFiles.length > 0 && (
+              <div className="uploaded-files">
+                <div className="uploaded-files-label">📎 Hochgeladene Dateien ({uploadedFiles.length}):</div>
+                <div className="uploaded-files-list">
+                  {uploadedFiles.map((file) => (
+                    <div key={file.id} className="uploaded-file-item">
+                      <span className="file-icon">📄</span>
+                      <span className="file-name">{file.name}</span>
+                      <button
+                        className="file-remove"
+                        onClick={() => setUploadedFiles(prev => prev.filter(f => f.id !== file.id))}
+                        aria-label="Delete file"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* File Upload Input (versteckt) + Button */}
+            <input
+              type="file"
+              id="file-upload"
+              multiple
+              onChange={handleFileUpload}
+              style={{ display: 'none' }}
+              aria-label="File upload"
+              accept=".pdf,.txt,.csv,.png,.jpg,.jpeg"
+            />
+            <button
+              className="file-upload-btn"
+              onClick={() => document.getElementById('file-upload')?.click()}
+              disabled={fileUploadLoading}
+              title={t('fileUploadGuide')}
+            >
+              📎 {t('fileUpload')}
+            </button>
+            {fileUploadError && <div className="upload-error">{fileUploadError}</div>}
+
+            {/* Chat Input */}
             <div className="input-container">
               <textarea
                 value={input}
@@ -584,9 +767,9 @@ function App(): React.ReactElement {
                 onClick={handleSendMessage}
                 className="send-btn"
                 aria-label="Send message"
-                disabled={!isMessageValid(input)}
+                disabled={!isMessageValid(input) || aiLoading}
               >
-                ➤
+                {aiLoading ? '⏳' : '➤'}
               </button>
             </div>
             <p className="input-hint">{t('disclaimer')}</p>
@@ -814,6 +997,69 @@ function App(): React.ReactElement {
             </select>
           </div>
 
+          {/* AI Service Selection */}
+          <div className="setting-item">
+            <label className="setting-label">🔌 KI-Service</label>
+            <select
+              value={aiProvider}
+              onChange={(e) => setAiProvider(e.target.value)}
+              className="setting-select"
+              aria-label="AI Service Provider"
+            >
+              {availableServices.map((service) => (
+                <option key={service.provider} value={service.provider}>
+                  {service.name}
+                </option>
+              ))}
+            </select>
+            <p className="setting-hint">{availableServices.find(s => s.provider === aiProvider)?.description}</p>
+          </div>
+
+          {/* API Key Input (if required) */}
+          {availableServices.find(s => s.provider === aiProvider)?.requiresKey && (
+            <div className="setting-item">
+              <label className="setting-label">🔑 API-Schlüssel</label>
+              <button
+                className="setting-btn"
+                onClick={() => setShowApiKeyInput(!showApiKeyInput)}
+              >
+                {showApiKeyInput ? 'Verstecken' : 'Eingeben'}
+              </button>
+              {showApiKeyInput && (
+                <input
+                  type="password"
+                  placeholder="Geben Sie Ihren API-Schlüssel ein"
+                  value={aiApiKey}
+                  onChange={(e) => setAiApiKey(e.target.value)}
+                  className="setting-input"
+                  aria-label="API Key"
+                />
+              )}
+            </div>
+          )}
+
+          {/* Custom API URL (for Ollama, Local) */}
+          {(aiProvider === 'ollama' || aiProvider === 'local') && (
+            <div className="setting-item">
+              <label className="setting-label">🌐 API-URL</label>
+              <input
+                type="text"
+                placeholder="http://localhost:11434"
+                value={aiApiUrl}
+                onChange={(e) => setAiApiUrl(e.target.value)}
+                className="setting-input"
+                aria-label="Custom API URL"
+              />
+            </div>
+          )}
+
+          {/* AI Error Display */}
+          {aiError && (
+            <div className="setting-item error">
+              <p className="setting-error">❌ {aiError}</p>
+            </div>
+          )}
+
           {/* Writing Style */}
           <div className="setting-item">
             <label className="setting-label">✍️ {t('writingStyle')}</label>
@@ -874,11 +1120,15 @@ function App(): React.ReactElement {
                   className={`language-btn ${globalSettings.language === lang ? 'active' : ''}`}
                   onClick={() => handleLanguageChange(lang)}
                   aria-pressed={globalSettings.language === lang}
+                  title={getTranslation('languageName', lang)}
                 >
                   {lang.toUpperCase()}
                 </button>
               ))}
             </div>
+            <p className="setting-hint">
+              {getTranslation('languageName', globalSettings.language)}
+            </p>
           </div>
 
           {/* Theme Selection */}
