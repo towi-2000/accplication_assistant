@@ -21,12 +21,26 @@ import type {
   Conversation,
   GlobalSettings,
   ChatSettings,
-  DataFile
+  DataFile,
+  WebPageRecord,
+  CrawlResultItem,
+  WebPreviewItem
 } from './type'
 import {
   getTranslation,
   applyThemeToDocument,
-  isMessageValid
+  isMessageValid,
+  parseUrlList,
+  limitUrls,
+  crawlUrls,
+  searchPages,
+  previewUrls,
+  getNextConversationId,
+  filterConversations,
+  updateConversationTitle,
+  buildSelectionMap,
+  savePage,
+  filterWebResults
 } from './Functions'
 
 // Typsichere Deserialisierung der JSON-Konfigurationsdaten
@@ -49,8 +63,30 @@ function App(): React.ReactElement {
   const [conversations, setConversations] = useState<Conversation[]>([
     { id: 1, title: 'Data Scientist Jobsuche' }
   ])
+  const [activeConversationId, setActiveConversationId] = useState<number>(1)
+  const [conversationSearch, setConversationSearch] = useState<string>('')
+  const [editingConversationId, setEditingConversationId] = useState<number | null>(null)
+  const [editingConversationTitle, setEditingConversationTitle] = useState<string>('')
   // systemPromptApplied: Flag ob der globale Anfangsprompt bereits zur AI gesendet wurde
   const [systemPromptApplied, setSystemPromptApplied] = useState<boolean>(false)
+
+  // ========== WEB PAGE DB STATE ==========
+  const [urlInput, setUrlInput] = useState<string>('')
+  const [crawlResults, setCrawlResults] = useState<CrawlResultItem[]>([])
+  const [crawlBusy, setCrawlBusy] = useState<boolean>(false)
+  const [crawlError, setCrawlError] = useState<string>('')
+
+  const [searchQuery, setSearchQuery] = useState<string>('')
+  const [searchResults, setSearchResults] = useState<WebPageRecord[]>([])
+  const [searchBusy, setSearchBusy] = useState<boolean>(false)
+  const [searchError, setSearchError] = useState<string>('')
+  const [dbResultsQuery, setDbResultsQuery] = useState<string>('')
+  const [previewResults, setPreviewResults] = useState<WebPreviewItem[]>([])
+  const [previewSelected, setPreviewSelected] = useState<Record<string, boolean>>({})
+  const [previewBusy, setPreviewBusy] = useState<boolean>(false)
+  const [previewError, setPreviewError] = useState<string>('')
+  const [saveBusy, setSaveBusy] = useState<boolean>(false)
+  const [saveProgress, setSaveProgress] = useState<{ current: number; total: number }>({ current: 0, total: 0 })
 
   // ========== UI STATE ==========
   // sidebarOpen: Sidebar ist auf mobilen Geräten ausblenbar (hamburger menu)
@@ -116,11 +152,67 @@ function App(): React.ReactElement {
    * Löscht alte Nachrichten und schließt die Sidebar
    */
   const handleNewChat = (): void => {
+    const nextId = getNextConversationId(conversations)
+    const nextConversation: Conversation = {
+      id: nextId,
+      title: `Neue Konversation ${nextId}`
+    }
+    setConversations((prev) => [...prev, nextConversation])
+    setActiveConversationId(nextId)
     setMessages([
       { id: 1, text: 'Hallo! Neue Jobsuche gestartet. Was für eine Position interessiert dich? 📋', sender: 'ai' }
     ])
     setSystemPromptApplied(false)
     setSidebarOpen(false)
+  }
+
+  const handleStartEditConversation = (conv: Conversation): void => {
+    setEditingConversationId(conv.id)
+    setEditingConversationTitle(conv.title)
+  }
+
+  const handleCommitConversationTitle = (): void => {
+    if (editingConversationId === null) {
+      return
+    }
+    setConversations((prev) => updateConversationTitle(prev, editingConversationId, editingConversationTitle))
+    setEditingConversationId(null)
+    setEditingConversationTitle('')
+  }
+
+  const handleCancelConversationEdit = (): void => {
+    setEditingConversationId(null)
+    setEditingConversationTitle('')
+  }
+
+  const handleDeleteConversation = (id: number): void => {
+    setConversations((prev) => {
+      const next = prev.filter(conv => conv.id !== id)
+
+      if (id === activeConversationId) {
+        if (next.length > 0) {
+          setActiveConversationId(next[0].id)
+          setMessages([
+            { id: 1, text: 'Hallo! Neue Jobsuche gestartet. Was fuer eine Position interessiert dich? 📋', sender: 'ai' }
+          ])
+          setSystemPromptApplied(false)
+        } else {
+          const newId = getNextConversationId(prev)
+          const newConversation: Conversation = {
+            id: newId,
+            title: `Neue Konversation ${newId}`
+          }
+          setActiveConversationId(newId)
+          setMessages([
+            { id: 1, text: 'Hallo! Neue Jobsuche gestartet. Was fuer eine Position interessiert dich? 📋', sender: 'ai' }
+          ])
+          setSystemPromptApplied(false)
+          return [newConversation]
+        }
+      }
+
+      return next
+    })
   }
 
   /**
@@ -237,6 +329,131 @@ function App(): React.ReactElement {
     })
   }
 
+  const handleCrawl = async (): Promise<void> => {
+    const urls = parseUrlList(urlInput)
+    if (urls.length === 0) {
+      setCrawlError('Bitte mindestens eine URL eingeben.')
+      return
+    }
+    if (urls.length > 1000) {
+      setCrawlError('Bitte maximal 1000 URLs eingeben.')
+      return
+    }
+
+    setCrawlBusy(true)
+    setCrawlError('')
+    try {
+      const response = await crawlUrls(limitUrls(urls, 1000), activeConversationId)
+      setCrawlResults(response.items)
+    } catch (error) {
+      setCrawlError('Crawl fehlgeschlagen. Bitte Server pruefen.')
+    } finally {
+      setCrawlBusy(false)
+    }
+  }
+
+  const handleSearch = async (): Promise<void> => {
+    if (!searchQuery.trim()) {
+      setSearchError('Bitte einen Suchbegriff eingeben.')
+      return
+    }
+
+    setSearchBusy(true)
+    setSearchError('')
+    setPreviewError('')
+    setPreviewResults([])
+    setPreviewSelected({})
+    try {
+      const response = await searchPages(searchQuery.trim(), activeConversationId, 1000, 0)
+      setSearchResults(response.items)
+      setDbResultsQuery('')
+
+      if (response.items.length === 0) {
+        const urls = parseUrlList(urlInput)
+        if (urls.length === 0) {
+          setSearchError('Keine Treffer in der Datenbank. Bitte URLs angeben.')
+          return
+        }
+        if (urls.length > 1000) {
+          setSearchError('Bitte maximal 1000 URLs eingeben.')
+          return
+        }
+
+        setPreviewBusy(true)
+        const preview = await previewUrls(limitUrls(urls, 1000), searchQuery.trim())
+        setPreviewResults(preview.items)
+        setPreviewSelected(buildSelectionMap(preview.items))
+      }
+    } catch (error) {
+      setSearchError('Suche fehlgeschlagen. Bitte Server pruefen.')
+    } finally {
+      setSearchBusy(false)
+      setPreviewBusy(false)
+    }
+  }
+
+  const handleTogglePreview = (url: string): void => {
+    setPreviewSelected((prev) => ({
+      ...prev,
+      [url]: !prev[url]
+    }))
+  }
+
+  const handleSelectAllPreview = (value: boolean): void => {
+    setPreviewSelected((prev) => {
+      const next = { ...prev }
+      Object.keys(next).forEach((key) => {
+        next[key] = value
+      })
+      return next
+    })
+  }
+
+  const handleSaveSelected = async (): Promise<void> => {
+    const toSave = previewResults.filter((item) => previewSelected[item.url])
+    if (toSave.length === 0) {
+      setPreviewError('Bitte mindestens eine URL auswaehlen.')
+      return
+    }
+
+    setSaveBusy(true)
+    setSaveProgress({ current: 0, total: toSave.length })
+    setPreviewError('')
+    try {
+      let saved = 0
+      for (const item of toSave) {
+        await savePage(item.url, item.content, activeConversationId, item.title || undefined)
+        saved += 1
+        setSaveProgress({ current: saved, total: toSave.length })
+      }
+
+      const refreshed = await searchPages(searchQuery.trim(), activeConversationId, 20, 0)
+      setSearchResults(refreshed.items)
+      setDbResultsQuery('')
+      setPreviewResults([])
+      setPreviewSelected({})
+    } catch (error) {
+      setPreviewError('Speichern fehlgeschlagen. Bitte Server pruefen.')
+    } finally {
+      setSaveBusy(false)
+    }
+  }
+
+  const filteredDbResults = filterWebResults(searchResults, dbResultsQuery)
+  const showProgress = searchBusy || previewBusy || crawlBusy || saveBusy
+  const progressLabel = searchBusy
+    ? 'Suche in Datenbank...'
+    : previewBusy
+      ? 'Pruefe Web-URLs...'
+      : crawlBusy
+        ? 'Speichere URLs...'
+        : saveBusy
+          ? 'Speichere Auswahl...'
+          : ''
+  const savePercent = saveProgress.total > 0
+    ? Math.round((saveProgress.current / saveProgress.total) * 100)
+    : 0
+
   return (
     <div className="app-container">
       {/* ===== MOBILE MENU TOGGLE ===== */}
@@ -265,13 +482,34 @@ function App(): React.ReactElement {
 
         <div className="conversations">
           <h3 className="conversations-title">{t('chats')}</h3>
-          {conversations.map((conv) => (
+          <input
+            type="text"
+            className="conversation-search"
+            placeholder="Chat suchen"
+            value={conversationSearch}
+            onChange={(e) => setConversationSearch(e.target.value)}
+            aria-label="Search chats"
+          />
+          {filterConversations(conversations, conversationSearch).map((conv) => (
             <div
               key={conv.id}
-              className="conversation-item active"
-              onClick={() => setSidebarOpen(false)}
+              className={`conversation-item ${conv.id === activeConversationId ? 'active' : ''}`}
+              onClick={() => {
+                setActiveConversationId(conv.id)
+                setSidebarOpen(false)
+              }}
             >
-              {conv.title}
+              <span className="conversation-title">{conv.title}</span>
+              <button
+                className="conversation-delete"
+                onClick={(event) => {
+                  event.stopPropagation()
+                  handleDeleteConversation(conv.id)
+                }}
+                aria-label="Delete chat"
+              >
+                ✕
+              </button>
             </div>
           ))}
         </div>
@@ -524,6 +762,149 @@ function App(): React.ReactElement {
             </div>
           </div>
         </div>
+
+        {/* ===== WEB PAGE DATABASE ===== */}
+        <section className="webdb-panel">
+          <div className="webdb-section">
+            <h3 className="webdb-title">Webseiten speichern</h3>
+            <textarea
+              value={urlInput}
+              onChange={(e) => setUrlInput(e.target.value)}
+              placeholder="Eine URL pro Zeile"
+              className="webdb-textarea"
+              aria-label="URL list"
+            />
+            <button
+              className="webdb-action"
+              onClick={handleCrawl}
+              disabled={crawlBusy}
+            >
+              {crawlBusy ? 'Crawle...' : 'Crawl & speichern'}
+            </button>
+            {crawlError && <p className="webdb-error">{crawlError}</p>}
+            {crawlResults.length > 0 && (
+              <div className="webdb-results">
+                {crawlResults.map((result) => (
+                  <div key={`${result.url}-${result.status}`} className={`webdb-result ${result.status}`}>
+                    <span className="webdb-result-url">{result.url}</span>
+                    <span className="webdb-result-status">{result.status}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <div className="webdb-section">
+            <h3 className="webdb-title">Suche</h3>
+            <div className="webdb-row">
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Suchbegriff"
+                className="webdb-input"
+                aria-label="Search query"
+              />
+              <button
+                className="webdb-action"
+                onClick={handleSearch}
+                disabled={searchBusy}
+              >
+                {searchBusy ? 'Suche...' : 'Suche'}
+              </button>
+            </div>
+            {searchError && <p className="webdb-error">{searchError}</p>}
+            {showProgress && (
+              <div className="webdb-progress">
+                <div className={`webdb-progress-bar ${saveBusy ? 'determinate' : 'indeterminate'}`}>
+                  {saveBusy && (
+                    <span className="webdb-progress-fill" style={{ width: `${savePercent}%` }}></span>
+                  )}
+                </div>
+                <span className="webdb-progress-label">{progressLabel}</span>
+                {saveBusy && (
+                  <span className="webdb-progress-count">
+                    {saveProgress.current}/{saveProgress.total}
+                  </span>
+                )}
+              </div>
+            )}
+            <div className="webdb-results">
+              {searchResults.length === 0 && !searchBusy && (
+                <span className="webdb-empty">Keine Treffer in der Datenbank</span>
+              )}
+            </div>
+            {searchResults.length > 0 && (
+              <div className="webdb-db">
+                <div className="webdb-db-search">
+                  <input
+                    type="text"
+                    className="webdb-input"
+                    placeholder="Treffer filtern"
+                    value={dbResultsQuery}
+                    onChange={(event) => setDbResultsQuery(event.target.value)}
+                    aria-label="Filter database results"
+                  />
+                </div>
+                <div className="webdb-results-db">
+                  {filteredDbResults.map((item, index) => (
+                    <div key={item.id} className="webdb-result-row">
+                      <span className="webdb-result-index">{index + 1}</span>
+                      <div className="webdb-result-content">
+                        <span className="webdb-result-url">{item.url}</span>
+                        <span className="webdb-result-title">{item.title || 'Ohne Titel'}</span>
+                        <span className="webdb-result-snippet">
+                          {item.content.slice(0, 160)}...
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+            {previewError && <p className="webdb-error">{previewError}</p>}
+            {previewResults.length > 0 && (
+              <div className="webdb-preview">
+                <div className="webdb-preview-header">
+                  <span>Web-Treffer</span>
+                  <div className="webdb-preview-actions">
+                    <button className="webdb-link" onClick={() => handleSelectAllPreview(true)}>
+                      Alle auswaehlen
+                    </button>
+                    <button className="webdb-link" onClick={() => handleSelectAllPreview(false)}>
+                      Keine
+                    </button>
+                  </div>
+                </div>
+                <div className="webdb-preview-list">
+                  {previewResults.map((item) => (
+                    <label key={item.url} className="webdb-preview-item">
+                      <input
+                        type="checkbox"
+                        checked={Boolean(previewSelected[item.url])}
+                        onChange={() => handleTogglePreview(item.url)}
+                      />
+                      <div className="webdb-preview-content">
+                        <span className="webdb-result-url">{item.url}</span>
+                        <span className="webdb-result-title">{item.title || 'Ohne Titel'}</span>
+                        <span className="webdb-result-snippet">
+                          {item.content.slice(0, 120)}...
+                        </span>
+                      </div>
+                    </label>
+                  ))}
+                </div>
+                <button
+                  className="webdb-action"
+                  onClick={handleSaveSelected}
+                  disabled={saveBusy}
+                >
+                  {saveBusy ? 'Speichere...' : 'Ausgewaehlte speichern'}
+                </button>
+              </div>
+            )}
+          </div>
+        </section>
 
         {/* ===== INPUT AREA ===== */}
         {/* 

@@ -21,6 +21,7 @@ body,
   --ai-message-bg: #e8e8e8;
   --text-color: #333;
   --border-color: #d9d9d9;
+  --header-block-height: 84px;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -54,12 +55,17 @@ body {
   border-right: 1px solid var(--border-color);
   display: flex;
   flex-direction: column;
-  padding: 16px;
+  padding: 0 16px 16px;
   overflow-y: auto;
 }
 
 .sidebar-header {
-  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  min-height: var(--header-block-height);
+  padding: 16px 0;
+  margin-bottom: 16px;
+  border-bottom: 1px solid var(--border-color);
 }
 
 .new-chat-btn {
@@ -100,7 +106,22 @@ body {
   opacity: 0.7;
 }
 
+.conversation-search {
+  width: 100%;
+  padding: 8px 10px;
+  margin-bottom: 12px;
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+  background-color: transparent;
+  color: var(--text-color);
+  font-size: 13px;
+}
+
 .conversation-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
   padding: 12px;
   margin-bottom: 8px;
   background-color: transparent;
@@ -108,9 +129,63 @@ body {
   cursor: pointer;
   font-size: 14px;
   transition: all 0.2s ease;
+}
+
+.conversation-title {
+  flex: 1;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.conversation-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.conversation-edit {
+  flex: 1;
+  padding: 6px 8px;
+  border-radius: 6px;
+  border: 1px solid var(--border-color);
+  background-color: transparent;
+  color: inherit;
+  font-size: 13px;
+}
+
+.conversation-edit-btn {
+  border: none;
+  background: transparent;
+  color: inherit;
+  font-size: 14px;
+  cursor: pointer;
+  opacity: 0.6;
+  padding: 2px 6px;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+}
+
+.conversation-edit-btn:hover {
+  opacity: 1;
+  background-color: rgba(0, 0, 0, 0.1);
+}
+
+.conversation-delete {
+  border: none;
+  background: transparent;
+  color: inherit;
+  font-size: 14px;
+  cursor: pointer;
+  opacity: 0.6;
+  padding: 2px 6px;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+}
+
+.conversation-delete:hover {
+  opacity: 1;
+  background-color: rgba(0, 0, 0, 0.1);
 }
 
 .conversation-item:hover {
@@ -157,6 +232,7 @@ body {
 /* ===== HEADER ===== */
 .chat-header {
   padding: 16px 24px;
+  min-height: var(--header-block-height);
   border-bottom: 1px solid var(--border-color);
   display: flex;
   justify-content: space-between;
@@ -215,6 +291,297 @@ body {
   display: flex;
   flex-direction: column;
   gap: 12px;
+}
+
+/* ===== WEB PAGE DATABASE ===== */
+.webdb-panel {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 16px;
+  padding: 16px 24px;
+  border-top: 1px solid var(--border-color);
+  background-color: var(--dark-bg);
+}
+
+.webdb-section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  background-color: rgba(0, 0, 0, 0.02);
+}
+
+.webdb-title {
+  font-size: 14px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  opacity: 0.8;
+}
+
+.webdb-textarea {
+  min-height: 120px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+  background-color: transparent;
+  color: var(--text-color);
+  resize: vertical;
+  font-size: 14px;
+}
+
+.webdb-row {
+  display: flex;
+  gap: 8px;
+}
+
+.webdb-input {
+  flex: 1;
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+  background-color: transparent;
+  color: var(--text-color);
+  font-size: 14px;
+}
+
+.webdb-action {
+  align-self: flex-start;
+  padding: 10px 14px;
+  border: none;
+  border-radius: 8px;
+  background-color: var(--primary-color);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.webdb-action:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.webdb-action:not(:disabled):hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 10px rgba(16, 163, 127, 0.2);
+}
+
+.webdb-error {
+  font-size: 12px;
+  color: #c0392b;
+}
+
+.webdb-results {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 180px;
+  overflow-y: auto;
+}
+
+.webdb-empty {
+  font-size: 12px;
+  opacity: 0.6;
+}
+
+.webdb-preview {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px dashed var(--border-color);
+}
+
+.webdb-progress {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 6px 10px;
+  align-items: center;
+  font-size: 12px;
+  margin-bottom: 8px;
+}
+
+.webdb-progress-bar {
+  position: relative;
+  width: 100%;
+  height: 6px;
+  border-radius: 999px;
+  background-color: rgba(16, 163, 127, 0.15);
+  overflow: hidden;
+}
+
+.webdb-progress-bar.indeterminate::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -30%;
+  width: 30%;
+  height: 100%;
+  background: var(--primary-color);
+  animation: progress-slide 1.2s infinite;
+}
+
+.webdb-progress-fill {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  background: var(--primary-color);
+}
+
+.webdb-progress-label {
+  grid-column: 1 / 2;
+  opacity: 0.7;
+}
+
+.webdb-progress-count {
+  grid-column: 2 / 3;
+  opacity: 0.7;
+}
+
+@keyframes progress-slide {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(430%);
+  }
+}
+
+.webdb-db {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.webdb-db-search {
+  display: flex;
+}
+
+.webdb-results-db {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.webdb-result-row {
+  display: grid;
+  grid-template-columns: 36px 1fr;
+  gap: 10px;
+  padding: 10px 12px;
+  font-size: 12px;
+}
+
+.webdb-result-row:nth-child(even) {
+  background-color: rgba(16, 163, 127, 0.06);
+}
+
+.webdb-result-index {
+  font-weight: 700;
+  color: var(--primary-color);
+}
+
+.webdb-result-content {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.webdb-preview-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.webdb-preview-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.webdb-link {
+  border: none;
+  background: transparent;
+  color: var(--primary-color);
+  font-size: 12px;
+  cursor: pointer;
+  padding: 0;
+}
+
+.webdb-preview-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.webdb-preview-item {
+  display: grid;
+  grid-template-columns: 20px 1fr;
+  gap: 10px;
+  align-items: start;
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+  background-color: rgba(16, 163, 127, 0.04);
+  font-size: 12px;
+}
+
+.webdb-preview-content {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.webdb-result {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+  background-color: rgba(16, 163, 127, 0.06);
+  font-size: 12px;
+}
+
+.webdb-result.failed {
+  background-color: rgba(192, 57, 43, 0.08);
+}
+
+.webdb-result.skipped {
+  background-color: rgba(241, 196, 15, 0.12);
+}
+
+.webdb-result-url {
+  font-weight: 600;
+  word-break: break-all;
+}
+
+.webdb-result-title {
+  opacity: 0.8;
+}
+
+.webdb-result-snippet {
+  opacity: 0.7;
+}
+
+.webdb-result-status {
+  text-transform: uppercase;
+  font-size: 11px;
+  opacity: 0.7;
 }
 
 .message {

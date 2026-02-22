@@ -17,7 +17,13 @@ import type {
   Theme,
   Themes,
   TranslationStrings,
-  Translations
+  Translations,
+  PageSearchResponse,
+  CrawlResponse,
+  WebPageRecord,
+  Conversation,
+  PreviewResponse,
+  WebPreviewItem
 } from './type'
 
 // Typsichere Deserialisierung der JSON-Konfigurationsdaten
@@ -110,4 +116,143 @@ export const applyThemeToDocument = (themeName: string): void => {
  */
 export const isMessageValid = (input: string): boolean => {
   return input.trim().length > 0
+}
+
+const API_BASE = (import.meta as { env?: { VITE_API_BASE?: string } }).env?.VITE_API_BASE || 'http://localhost:5174'
+
+const ensureScheme = (value: string): string => {
+  if (/^https?:\/\//i.test(value)) {
+    return value
+  }
+  return `https://${value}`
+}
+
+export const parseUrlList = (input: string): string[] => {
+  const raw = input
+    .split(/[\s,]+/)
+    .map(entry => entry.trim())
+    .filter(Boolean)
+
+  const normalized = raw
+    .map(ensureScheme)
+    .filter((value, index, list) => list.indexOf(value) === index)
+
+  return normalized
+}
+
+export const limitUrls = (urls: string[], max = 1000): string[] => {
+  return urls.slice(0, max)
+}
+
+export const searchPages = async (query: string, chatId: number, limit = 1000, offset = 0): Promise<PageSearchResponse> => {
+  const params = new URLSearchParams({
+    q: query,
+    limit: String(limit),
+    offset: String(offset),
+    chatId: String(chatId)
+  })
+  const response = await fetch(`${API_BASE}/api/pages/search?${params.toString()}`)
+
+  if (!response.ok) {
+    throw new Error('Search failed')
+  }
+
+  return response.json()
+}
+
+export const savePage = async (url: string, content: string, chatId: number, title?: string): Promise<WebPageRecord> => {
+  const response = await fetch(`${API_BASE}/api/pages`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ url, content, title, chatId })
+  })
+
+  if (!response.ok) {
+    throw new Error('Save failed')
+  }
+
+  const payload = await response.json()
+  return {
+    id: payload.id,
+    url,
+    title: title ?? null,
+    content,
+    status_code: null,
+    content_hash: payload.contentHash ?? null,
+    fetched_at: '',
+    created_at: '',
+    updated_at: ''
+  }
+}
+
+export const crawlUrls = async (urls: string[], chatId: number): Promise<CrawlResponse> => {
+  const response = await fetch(`${API_BASE}/api/crawl`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ urls, chatId })
+  })
+
+  if (!response.ok) {
+    throw new Error('Crawl failed')
+  }
+
+  return response.json()
+}
+
+export const previewUrls = async (urls: string[], query: string): Promise<PreviewResponse> => {
+  const response = await fetch(`${API_BASE}/api/preview`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ urls, query })
+  })
+
+  if (!response.ok) {
+    throw new Error('Preview failed')
+  }
+
+  return response.json()
+}
+
+export const getNextConversationId = (conversations: Conversation[]): number => {
+  if (conversations.length === 0) {
+    return 1
+  }
+  return Math.max(...conversations.map(conv => conv.id)) + 1
+}
+
+export const filterConversations = (conversations: Conversation[], query: string): Conversation[] => {
+  const normalized = query.trim().toLowerCase()
+  if (!normalized) {
+    return conversations
+  }
+  return conversations.filter(conv => conv.title.toLowerCase().includes(normalized))
+}
+
+export const filterWebResults = (items: WebPageRecord[], query: string): WebPageRecord[] => {
+  const normalized = query.trim().toLowerCase()
+  if (!normalized) {
+    return items
+  }
+  return items.filter((item) => {
+    const haystack = `${item.url} ${item.title ?? ''} ${item.content}`.toLowerCase()
+    return haystack.includes(normalized)
+  })
+}
+
+export const updateConversationTitle = (
+  conversations: Conversation[],
+  conversationId: number,
+  title: string
+): Conversation[] => {
+  const nextTitle = title.trim() || 'Neue Konversation'
+  return conversations.map(conv => (
+    conv.id === conversationId ? { ...conv, title: nextTitle } : conv
+  ))
+}
+
+export const buildSelectionMap = (items: WebPreviewItem[]): Record<string, boolean> => {
+  return items.reduce((acc, item) => {
+    acc[item.url] = false
+    return acc
+  }, {} as Record<string, boolean>)
 }

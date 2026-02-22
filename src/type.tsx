@@ -144,3 +144,48 @@ export type DataFile = {
   translations: Translations  // Alle Sprach-Übersetzungen
   themes: Themes              // Alle Design-Themes
 }
+
+// ===== WEB PAGE TYPES =====
+
+export type WebPageRecord = {
+  id: number
+  url: string
+  title: string | null
+  content: string
+  status_code: number | null
+  content_hash: string | null
+  fetched_at: string
+  created_at: string
+  updated_at: string
+}
+
+export type PageSearchResponse = {
+  items: WebPageRecord[]
+  limit: number
+  offset: number
+}
+
+export type CrawlResultItem = {
+  url: string
+  status: 'ok' | 'failed' | 'skipped'
+  id?: number
+  statusCode?: number
+  contentHash?: string
+  reason?: string
+}
+
+export type CrawlResponse = {
+  items: CrawlResultItem[]
+}
+
+export type WebPreviewItem = {
+  url: string
+  title: string | null
+  content: string
+  statusCode?: number
+  reason?: string
+}
+
+export type PreviewResponse = {
+  items: WebPreviewItem[]
+}
