@@ -482,6 +482,42 @@ body {
   overflow-y: auto;
 }
 
+.webdb-section {
+  margin-top: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.webdb-filter-fields {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+}
+
+.webdb-filter-preview {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.webdb-filter-count {
+  font-size: 12px;
+  opacity: 0.8;
+}
+
+.webdb-label {
+  font-size: 12px;
+  font-weight: 600;
+  opacity: 0.8;
+}
+
+.webdb-applications {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
 .webdb-empty {
   font-size: 12px;
   opacity: 0.6;

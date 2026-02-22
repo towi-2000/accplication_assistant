@@ -24,7 +24,9 @@ import type {
   DataFile,
   WebPageRecord,
   CrawlResultItem,
-  WebPreviewItem
+  WebPreviewItem,
+  JobSearchItem,
+  FileRecord
 } from './type'
 import {
   getTranslation,
@@ -34,7 +36,13 @@ import {
   limitUrls,
   crawlUrls,
   searchPages,
+  searchJobs,
   previewUrls,
+  fetchFiles,
+  fetchFileContent,
+  previewDbFilter,
+  deleteFilteredDb,
+  fetchAllPages,
   getNextConversationId,
   filterConversations,
   updateConversationTitle,
@@ -79,6 +87,7 @@ function App(): React.ReactElement {
   ])
   const [lastSearchQueries, setLastSearchQueries] = useState<string[]>([])
   const [searchResults, setSearchResults] = useState<WebPageRecord[]>([])
+  const [jobResults, setJobResults] = useState<JobSearchItem[]>([])
   const [searchBusy, setSearchBusy] = useState<boolean>(false)
   const [searchError, setSearchError] = useState<string>('')
   const [dbResultsQuery, setDbResultsQuery] = useState<string>('')
@@ -134,6 +143,22 @@ function App(): React.ReactElement {
   const [uploadedFiles, setUploadedFiles] = useState<Array<{ id: string; name: string; size: number }>>([])
   const [fileUploadError, setFileUploadError] = useState<string>('')
   const [fileUploadLoading, setFileUploadLoading] = useState<boolean>(false)
+  const [templateFiles, setTemplateFiles] = useState<FileRecord[]>([])
+  const [selectedTemplateId, setSelectedTemplateId] = useState<string>('')
+
+  // ===== DB FILTER STATE =====
+  const [filterInclude, setFilterInclude] = useState<string>('')
+  const [filterExclude, setFilterExclude] = useState<string>('')
+  const [filterPreviewItems, setFilterPreviewItems] = useState<WebPageRecord[]>([])
+  const [filterPreviewTotal, setFilterPreviewTotal] = useState<number>(0)
+  const [filterBusy, setFilterBusy] = useState<boolean>(false)
+  const [filterError, setFilterError] = useState<string>('')
+
+  // ===== APPLICATION GENERATION STATE =====
+  const [applicationInstruction, setApplicationInstruction] = useState<string>('')
+  const [applicationBusy, setApplicationBusy] = useState<boolean>(false)
+  const [applicationError, setApplicationError] = useState<string>('')
+  const [applicationProgress, setApplicationProgress] = useState<{ current: number; total: number }>({ current: 0, total: 0 })
 
   // ========== MODAL STATE ==========
   const [helpModalOpen, setHelpModalOpen] = useState<boolean>(false)
@@ -166,6 +191,19 @@ function App(): React.ReactElement {
 
     loadServices()
   }, [])
+
+  useEffect(() => {
+    const loadFiles = async () => {
+      try {
+        const response = await fetchFiles(activeConversationId)
+        setTemplateFiles(response.files)
+      } catch (error) {
+        console.error('Failed to load files:', error)
+      }
+    }
+
+    loadFiles()
+  }, [activeConversationId])
 
   // ========== EVENT HANDLER ==========
 
@@ -215,7 +253,12 @@ function App(): React.ReactElement {
     if (editingConversationId === null) {
       return
     }
-    setConversations((prev) => updateConversationTitle(prev, editingConversationId, editingConversationTitle))
+    setConversations((prev) => updateConversationTitle(
+      prev,
+      editingConversationId,
+      editingConversationTitle,
+      t('defaultConversationTitle')
+    ))
     setEditingConversationId(null)
     setEditingConversationTitle('')
   }
@@ -272,25 +315,56 @@ function App(): React.ReactElement {
         
         // Validate file
         if (file.size > 10 * 1024 * 1024) { // 10MB limit
-          setFileUploadError(`${file.name} ist zu groß (Max. 10MB)`)
+          setFileUploadError(`${file.name} ${t('errorFileTooLarge')}`)
           continue
         }
 
         // Create file entry
         const fileId = `${Date.now()}-${i}`
+        const base64Content = await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader()
+          reader.onload = () => {
+            const result = String(reader.result || '')
+            const base64 = result.split(',')[1] || ''
+            resolve(base64)
+          }
+          reader.onerror = () => reject(new Error('File read failed'))
+          reader.readAsDataURL(file)
+        })
+
+        const response = await fetch('/api/upload', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            fileName: file.name,
+            fileContent: base64Content,
+            fileType: file.type,
+            fileSize: file.size,
+            chatId: activeConversationId
+          })
+        })
+
+        if (!response.ok) {
+          const errorPayload = await response.json()
+          throw new Error(errorPayload.error || t('errorFileUpload'))
+        }
+
+        const payload = await response.json()
         newFiles.push({
-          id: fileId,
-          name: file.name,
+          id: payload.fileId,
+          name: payload.fileName,
           size: file.size
         })
       }
 
       setUploadedFiles(prev => [...prev, ...newFiles])
+      const refreshed = await fetchFiles(activeConversationId)
+      setTemplateFiles(refreshed.files)
 
       // Reset input
       e.currentTarget.value = ''
     } catch (error) {
-      const errorMsg = error instanceof Error ? error.message : 'Fehler beim hochladen'
+      const errorMsg = error instanceof Error ? error.message : t('errorFileUpload')
       setFileUploadError(errorMsg)
     } finally {
       setFileUploadLoading(false)
@@ -328,7 +402,7 @@ function App(): React.ReactElement {
 
 ${chatSettings.systemPrompt}
 
-${uploadedFiles.length > 0 ? `Hochgeladene Dateien: ${uploadedFiles.map(f => f.name).join(', ')}` : ''}`
+${uploadedFiles.length > 0 ? `${t('uploadedFilesSystem')}: ${uploadedFiles.map(f => f.name).join(', ')}` : ''}`
 
       const messagesForApi = [
         {
@@ -366,7 +440,7 @@ ${uploadedFiles.length > 0 ? `Hochgeladene Dateien: ${uploadedFiles.map(f => f.n
 
       if (!response.ok) {
         const error = await response.json()
-        throw new Error(error.error || 'AI Anfrage fehlgeschlagen')
+        throw new Error(error.error || t('errorAiRequestFailed'))
       }
 
       const data = await response.json()
@@ -374,12 +448,12 @@ ${uploadedFiles.length > 0 ? `Hochgeladene Dateien: ${uploadedFiles.map(f => f.n
       // Add AI response to messages
       const aiResponse: Message = {
         id: messages.length + 2,
-        text: data.content || 'Keine Antwort erhalten',
+        text: data.content || t('errorNoAiResponse'),
         sender: 'ai'
       }
       setMessages((prev) => [...prev, aiResponse])
     } catch (error) {
-      const errorMsg = error instanceof Error ? error.message : 'Unbekannter Fehler'
+      const errorMsg = error instanceof Error ? error.message : t('errorUnknown')
       setAiError(errorMsg)
 
       // Add error message
@@ -473,11 +547,11 @@ ${uploadedFiles.length > 0 ? `Hochgeladene Dateien: ${uploadedFiles.map(f => f.n
   const handleCrawl = async (): Promise<void> => {
     const urls = parseUrlList(urlInput)
     if (urls.length === 0) {
-      setCrawlError('Bitte mindestens eine URL eingeben.')
+      setCrawlError(t('errorUrlRequired'))
       return
     }
     if (urls.length > 1000) {
-      setCrawlError('Bitte maximal 1000 URLs eingeben.')
+      setCrawlError(t('errorUrlMax'))
       return
     }
 
@@ -487,7 +561,7 @@ ${uploadedFiles.length > 0 ? `Hochgeladene Dateien: ${uploadedFiles.map(f => f.n
       const response = await crawlUrls(limitUrls(urls, 1000), activeConversationId)
       setCrawlResults(response.items)
     } catch (error) {
-      setCrawlError('Crawl fehlgeschlagen. Bitte Server pruefen.')
+      setCrawlError(t('errorCrawlFailed'))
     } finally {
       setCrawlBusy(false)
     }
@@ -499,10 +573,150 @@ ${uploadedFiles.length > 0 ? `Hochgeladene Dateien: ${uploadedFiles.map(f => f.n
       .filter((value) => value.length > 0)
   }
 
+
+  const parseKeywords = (value: string): string[] => {
+    return value
+      .split(/[\n,]+/)
+      .map((entry) => entry.trim())
+      .filter(Boolean)
+  }
+
+  const handleFilterPreview = async (): Promise<void> => {
+    setFilterBusy(true)
+    setFilterError('')
+    try {
+      const include = parseKeywords(filterInclude)
+      const exclude = parseKeywords(filterExclude)
+      const response = await previewDbFilter(include, exclude, activeConversationId)
+      setFilterPreviewItems(response.items)
+      setFilterPreviewTotal(response.total)
+    } catch (error) {
+      setFilterError(t('errorFilterPreviewFailed'))
+    } finally {
+      setFilterBusy(false)
+    }
+  }
+
+  const handleFilterDelete = async (): Promise<void> => {
+    setFilterBusy(true)
+    setFilterError('')
+    try {
+      const include = parseKeywords(filterInclude)
+      const exclude = parseKeywords(filterExclude)
+      const response = await deleteFilteredDb(include, exclude, activeConversationId)
+      setSearchResults((prev) => prev.filter((item) => !response.deletedIds.includes(item.id)))
+      setFilterPreviewItems([])
+      setFilterPreviewTotal(0)
+    } catch (error) {
+      setFilterError(t('errorFilterDeleteFailed'))
+    } finally {
+      setFilterBusy(false)
+    }
+  }
+
+  const decodeBase64Text = (base64: string): string => {
+    try {
+      const binary = atob(base64)
+      const bytes = Uint8Array.from(binary, (char) => char.charCodeAt(0))
+      return new TextDecoder('utf-8').decode(bytes)
+    } catch (error) {
+      return ''
+    }
+  }
+
+  const buildTemplateBlock = async (): Promise<string> => {
+    if (!selectedTemplateId) {
+      return ''
+    }
+
+    const template = await fetchFileContent(selectedTemplateId, activeConversationId)
+    const isText = template.mime ? template.mime.startsWith('text/') : /\.(txt|md|rtf)$/i.test(template.name)
+    if (!isText) {
+      return `${t('templateBinaryNotice')} ${template.name}`
+    }
+
+    const content = decodeBase64Text(template.contentBase64)
+    return `${t('templateLabel')}\n${content}`
+  }
+
+  const downloadTextFile = (filename: string, content: string): void => {
+    const blob = new Blob([content], { type: 'text/plain;charset=utf-8' })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = filename
+    link.click()
+    URL.revokeObjectURL(url)
+  }
+
+  const handleGenerateApplications = async (): Promise<void> => {
+    setApplicationBusy(true)
+    setApplicationError('')
+    setApplicationProgress({ current: 0, total: 0 })
+
+    try {
+      const pagesResponse = await fetchAllPages(activeConversationId)
+      const pages = pagesResponse.items
+      if (pages.length === 0) {
+        setApplicationError(t('errorNoDbEntries'))
+        return
+      }
+
+      const templateBlock = await buildTemplateBlock()
+      const instruction = applicationInstruction.trim()
+      const total = pages.length
+      setApplicationProgress({ current: 0, total })
+
+      for (let index = 0; index < pages.length; index += 1) {
+        const item = pages[index]
+        const jobText = `${item.title || ''} ${item.url}\n${item.content}`.trim()
+        const prompt = `${t('applicationPrompt')}
+
+${instruction ? `${t('applicationInstructionLabel')}: ${instruction}\n` : ''}${templateBlock ? `${templateBlock}\n` : ''}${t('applicationJobPostingLabel')}:
+${jobText}`
+
+        const response = await fetch('/api/ai/chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            provider: aiProvider,
+            apiKey: aiApiKey || undefined,
+            apiUrl: aiApiUrl || undefined,
+            model: chatSettings.model,
+            temperature: chatSettings.temperature,
+            messages: [
+              {
+                role: 'system',
+                content: `${globalSettings.globalSystemPrompt}
+
+${chatSettings.systemPrompt}`
+              },
+              { role: 'user', content: prompt }
+            ],
+            chatId: activeConversationId
+          })
+        })
+
+        if (!response.ok) {
+          throw new Error(t('errorApplicationGenerateFailed'))
+        }
+
+        const payload = await response.json()
+        const filename = `application-${index + 1}.txt`
+        downloadTextFile(filename, payload.content || '')
+        setApplicationProgress({ current: index + 1, total })
+      }
+    } catch (error) {
+      setApplicationError(t('errorApplicationGenerateFailed'))
+    } finally {
+      setApplicationBusy(false)
+    }
+  }
+
   const handleSearchAll = async (): Promise<void> => {
     const normalizedQueries = getNormalizedQueries(searchFields)
     if (normalizedQueries.length === 0) {
-      setSearchError('Bitte mindestens einen Suchbegriff eingeben.')
+      setSearchError(t('errorSearchQueryRequired'))
       return
     }
 
@@ -515,9 +729,14 @@ ${uploadedFiles.length > 0 ? `Hochgeladene Dateien: ${uploadedFiles.map(f => f.n
     const errorMessages: string[] = []
 
     try {
-      const searchSettled = await Promise.allSettled(
-        normalizedQueries.map((query) => searchPages(query, activeConversationId, 1000, 0))
-      )
+      const [searchSettled, jobSettled] = await Promise.all([
+        Promise.allSettled(
+          normalizedQueries.map((query) => searchPages(query, activeConversationId, 1000, 0))
+        ),
+        Promise.allSettled(
+          normalizedQueries.map((query) => searchJobs(query, 50))
+        )
+      ])
 
       const mergedResults = new Map<number, WebPageRecord>()
       const emptyQueries: string[] = []
@@ -544,16 +763,34 @@ ${uploadedFiles.length > 0 ? `Hochgeladene Dateien: ${uploadedFiles.map(f => f.n
       setDbResultsQuery('')
       setLastSearchQueries(normalizedQueries)
 
+      const jobItems: JobSearchItem[] = []
+      const failedJobQueries: string[] = []
+
+      jobSettled.forEach((result, index) => {
+        const query = normalizedQueries[index]
+        if (result.status === 'fulfilled') {
+          jobItems.push(...result.value.items)
+        } else {
+          failedJobQueries.push(query)
+        }
+      })
+
+      setJobResults(jobItems)
+
+      if (failedJobQueries.length > 0) {
+        errorMessages.push(`${t('errorJobSearchFailedFor')}: ${failedJobQueries.join(', ')}`)
+      }
+
       if (failedQueries.length > 0) {
-        errorMessages.push(`Suche fehlgeschlagen fuer: ${failedQueries.join(', ')}`)
+        errorMessages.push(`${t('errorSearchFailedFor')}: ${failedQueries.join(', ')}`)
       }
 
       if (emptyQueries.length > 0) {
         const urls = parseUrlList(urlInput)
         if (urls.length === 0) {
-          errorMessages.push(`Keine Treffer in der Datenbank fuer: ${emptyQueries.join(', ')}. Bitte URLs angeben.`)
+          errorMessages.push(`${t('errorNoDbHitsFor')}: ${emptyQueries.join(', ')}. ${t('errorPleaseProvideUrls')}`)
         } else if (urls.length > 1000) {
-          errorMessages.push('Bitte maximal 1000 URLs eingeben.')
+          errorMessages.push(t('errorUrlMax'))
         } else {
           setPreviewBusy(true)
           const previewSettled = await Promise.allSettled(
@@ -583,12 +820,12 @@ ${uploadedFiles.length > 0 ? `Hochgeladene Dateien: ${uploadedFiles.map(f => f.n
           setPreviewSelected(buildSelectionMap(previewList))
 
           if (previewFailed) {
-            setPreviewError('Web-Vorschau fehlgeschlagen. Bitte Server pruefen.')
+            setPreviewError(t('errorPreviewFailed'))
           }
         }
       }
     } catch (error) {
-      errorMessages.push('Suche fehlgeschlagen. Bitte Server pruefen.')
+      errorMessages.push(t('errorSearchFailed'))
     } finally {
       setSearchBusy(false)
       setPreviewBusy(false)
@@ -618,7 +855,7 @@ ${uploadedFiles.length > 0 ? `Hochgeladene Dateien: ${uploadedFiles.map(f => f.n
   const handleSaveSelected = async (): Promise<void> => {
     const toSave = previewResults.filter((item) => previewSelected[item.url])
     if (toSave.length === 0) {
-      setPreviewError('Bitte mindestens eine URL auswaehlen.')
+      setPreviewError(t('errorSelectUrl'))
       return
     }
 
@@ -659,22 +896,33 @@ ${uploadedFiles.length > 0 ? `Hochgeladene Dateien: ${uploadedFiles.map(f => f.n
       setPreviewResults([])
       setPreviewSelected({})
     } catch (error) {
-      setPreviewError('Speichern fehlgeschlagen. Bitte Server pruefen.')
+      setPreviewError(t('errorSaveFailed'))
     } finally {
       setSaveBusy(false)
     }
   }
 
-  const filteredDbResults = filterWebResults(searchResults, dbResultsQuery)
+  const jobRecords: WebPageRecord[] = jobResults.map((item, index) => ({
+    id: -(index + 1),
+    url: item.url,
+    title: `[${item.source}] ${item.title}`,
+    content: `${item.company} ${item.location ?? ''} ${item.description}`.trim(),
+    status_code: null,
+    content_hash: null,
+    fetched_at: '',
+    created_at: '',
+    updated_at: ''
+  }))
+  const combinedResults = filterWebResults([...searchResults, ...jobRecords], dbResultsQuery)
   const showProgress = searchBusy || previewBusy || crawlBusy || saveBusy
   const progressLabel = searchBusy
-    ? 'Suche in Datenbank...'
+    ? t('progressSearchDb')
     : previewBusy
-      ? 'Pruefe Web-URLs...'
+      ? t('progressPreviewUrls')
       : crawlBusy
-        ? 'Speichere URLs...'
+        ? t('progressCrawlUrls')
         : saveBusy
-          ? 'Speichere Auswahl...'
+          ? t('progressSaveSelection')
           : ''
   const savePercent = saveProgress.total > 0
     ? Math.round((saveProgress.current / saveProgress.total) * 100)
@@ -688,7 +936,7 @@ ${uploadedFiles.length > 0 ? `Hochgeladene Dateien: ${uploadedFiles.map(f => f.n
       <button
         className="menu-toggle"
         onClick={() => setSidebarOpen(!sidebarOpen)}
-        aria-label="Toggle menu"
+        aria-label={t('toggleMenuAria')}
       >
         {sidebarOpen ? '✕' : '☰'}
       </button>
@@ -712,10 +960,10 @@ ${uploadedFiles.length > 0 ? `Hochgeladene Dateien: ${uploadedFiles.map(f => f.n
           <input
             type="text"
             className="conversation-search"
-            placeholder="Chat suchen"
+            placeholder={t('searchChatsPlaceholder')}
             value={conversationSearch}
             onChange={(e) => setConversationSearch(e.target.value)}
-            aria-label="Search chats"
+            aria-label={t('searchChatsAria')}
           />
           {filterConversations(conversations, conversationSearch).map((conv) => (
             <div
@@ -733,7 +981,7 @@ ${uploadedFiles.length > 0 ? `Hochgeladene Dateien: ${uploadedFiles.map(f => f.n
                   event.stopPropagation()
                   handleDeleteConversation(conv.id)
                 }}
-                aria-label="Delete chat"
+                aria-label={t('deleteChatAria')}
               >
                 ✕
               </button>
@@ -745,14 +993,14 @@ ${uploadedFiles.length > 0 ? `Hochgeladene Dateien: ${uploadedFiles.map(f => f.n
           <button
             className="sidebar-btn"
             onClick={() => setGlobalSettingsOpen(true)}
-            aria-label="Global settings"
+            aria-label={t('globalSettingsAria')}
           >
             ⚙️ {t('settings')}
           </button>
           <button 
             className="sidebar-btn" 
             onClick={() => setHelpModalOpen(true)}
-            aria-label="Help"
+            aria-label={t('helpAria')}
           >
             ❓ {t('help')}
           </button>
@@ -776,7 +1024,7 @@ ${uploadedFiles.length > 0 ? `Hochgeladene Dateien: ${uploadedFiles.map(f => f.n
                 className="settings-btn"
                 onClick={() => setSettingsPanelOpen(!settingsPanelOpen)}
                 title={t('chatSettings')}
-                aria-label="Chat settings"
+                aria-label={t('chatSettingsAria')}
               >
                 ⚙️
               </button>
@@ -805,7 +1053,7 @@ ${uploadedFiles.length > 0 ? `Hochgeladene Dateien: ${uploadedFiles.map(f => f.n
             {/* Datei-Upload-Bereich */}
             {uploadedFiles.length > 0 && (
               <div className="uploaded-files">
-                <div className="uploaded-files-label">📎 Hochgeladene Dateien ({uploadedFiles.length}):</div>
+                <div className="uploaded-files-label">📎 {t('uploadedFilesLabel')} ({uploadedFiles.length}):</div>
                 <div className="uploaded-files-list">
                   {uploadedFiles.map((file) => (
                     <div key={file.id} className="uploaded-file-item">
@@ -814,7 +1062,7 @@ ${uploadedFiles.length > 0 ? `Hochgeladene Dateien: ${uploadedFiles.map(f => f.n
                       <button
                         className="file-remove"
                         onClick={() => setUploadedFiles(prev => prev.filter(f => f.id !== file.id))}
-                        aria-label="Delete file"
+                        aria-label={t('deleteFileAria')}
                       >
                         ✕
                       </button>
@@ -831,7 +1079,7 @@ ${uploadedFiles.length > 0 ? `Hochgeladene Dateien: ${uploadedFiles.map(f => f.n
               multiple
               onChange={handleFileUpload}
               style={{ display: 'none' }}
-              aria-label="File upload"
+              aria-label={t('fileUploadAria')}
               accept=".pdf,.txt,.csv,.png,.jpg,.jpeg"
             />
             <button
@@ -852,12 +1100,12 @@ ${uploadedFiles.length > 0 ? `Hochgeladene Dateien: ${uploadedFiles.map(f => f.n
                 onKeyPress={handleKeyPress}
                 placeholder={t('inputPlaceholder')}
                 className="message-input"
-                aria-label="Message input"
+                aria-label={t('messageInputAria')}
               />
               <button
                 onClick={handleSendMessage}
                 className="send-btn"
-                aria-label="Send message"
+                aria-label={t('sendMessageAria')}
                 disabled={!isMessageValid(input) || aiLoading}
               >
                 {aiLoading ? '⏳' : '➤'}
@@ -870,20 +1118,20 @@ ${uploadedFiles.length > 0 ? `Hochgeladene Dateien: ${uploadedFiles.map(f => f.n
         {/* ===== CENTER COLUMN: SEARCH INPUT ===== */}
         <div className="chat-column chat-column-center">
           <div className="search-panel">
-            <h3 className="search-title">📄 Webseiten erfassen</h3>
+            <h3 className="search-title">📄 {t('crawlTitle')}</h3>
             <textarea
               value={urlInput}
               onChange={(e) => setUrlInput(e.target.value)}
-              placeholder="Eine URL pro Zeile (max. 1000)"
+              placeholder={t('urlListPlaceholder')}
               className="webdb-textarea"
-              aria-label="URL list"
+              aria-label={t('urlListAria')}
             />
             <button
               className="webdb-action"
               onClick={handleCrawl}
               disabled={crawlBusy}
             >
-              {crawlBusy ? 'Crawle...' : 'Crawl & Speichern'}
+              {crawlBusy ? t('crawlBusyLabel') : t('crawlAction')}
             </button>
             {crawlError && <p className="webdb-error">{crawlError}</p>}
             {crawlResults.length > 0 && (
@@ -899,7 +1147,7 @@ ${uploadedFiles.length > 0 ? `Hochgeladene Dateien: ${uploadedFiles.map(f => f.n
 
             <div className="search-divider"></div>
 
-            <h3 className="search-title">🔍 Suchen</h3>
+            <h3 className="search-title">🔍 {t('searchTitle')}</h3>
             <div className="webdb-search-fields">
               {searchFields.map((field, index) => (
                 <div key={field.id} className="webdb-row webdb-search-row">
@@ -913,9 +1161,9 @@ ${uploadedFiles.length > 0 ? `Hochgeladene Dateien: ${uploadedFiles.map(f => f.n
                           : entry
                       ))
                     ))}
-                    placeholder={`Suchbegriff ${index + 1}`}
+                    placeholder={`${t('searchTermPlaceholder')} ${index + 1}`}
                     className="webdb-input"
-                    aria-label={`Search query ${index + 1}`}
+                    aria-label={`${t('searchQueryAria')} ${index + 1}`}
                   />
                   <button
                     className="webdb-icon"
@@ -923,7 +1171,7 @@ ${uploadedFiles.length > 0 ? `Hochgeladene Dateien: ${uploadedFiles.map(f => f.n
                       prev.length > 1 ? prev.filter((entry) => entry.id !== field.id) : prev
                     ))}
                     disabled={searchFields.length === 1}
-                    aria-label={`Search field ${index + 1} entfernen`}
+                    aria-label={`${t('searchFieldRemoveAria')} ${index + 1}`}
                     type="button"
                   >
                     x
@@ -939,7 +1187,7 @@ ${uploadedFiles.length > 0 ? `Hochgeladene Dateien: ${uploadedFiles.map(f => f.n
                 })}
                 type="button"
               >
-                Feld hinzufuegen
+                {t('addSearchField')}
               </button>
             </div>
             <div className="webdb-row">
@@ -948,7 +1196,7 @@ ${uploadedFiles.length > 0 ? `Hochgeladene Dateien: ${uploadedFiles.map(f => f.n
                 onClick={handleSearchAll}
                 disabled={searchBusy || !hasSearchQuery}
               >
-                {searchBusy ? 'Suche...' : 'Suche'}
+                {searchBusy ? t('searchBusyLabel') : t('searchAction')}
               </button>
             </div>
             {searchError && <p className="webdb-error">{searchError}</p>}
@@ -974,31 +1222,31 @@ ${uploadedFiles.length > 0 ? `Hochgeladene Dateien: ${uploadedFiles.map(f => f.n
               </div>
             )}
 
-            <h3 className="results-title">💾 Datenbank-Treffer</h3>
+            <h3 className="results-title">💾 {t('dbResultsTitle')}</h3>
             <div className="webdb-results">
-              {searchResults.length === 0 && !searchBusy && (
-                <span className="webdb-empty">Keine Treffer</span>
+              {combinedResults.length === 0 && !searchBusy && (
+                <span className="webdb-empty">{t('noResults')}</span>
               )}
             </div>
-            {searchResults.length > 0 && (
+            {combinedResults.length > 0 && (
               <div className="webdb-db">
                 <div className="webdb-db-search">
                   <input
                     type="text"
                     className="webdb-input"
-                    placeholder="Treffer filtern"
+                    placeholder={t('filterResultsPlaceholder')}
                     value={dbResultsQuery}
                     onChange={(event) => setDbResultsQuery(event.target.value)}
-                    aria-label="Filter database results"
+                    aria-label={t('filterResultsAria')}
                   />
                 </div>
                 <div className="webdb-results-db">
-                  {filteredDbResults.map((item, index) => (
+                  {combinedResults.map((item, index) => (
                     <div key={item.id} className="webdb-result-row">
                       <span className="webdb-result-index">{index + 1}</span>
                       <div className="webdb-result-content">
                         <span className="webdb-result-url">{item.url}</span>
-                        <span className="webdb-result-title">{item.title || 'Ohne Titel'}</span>
+                        <span className="webdb-result-title">{item.title || t('untitled')}</span>
                         <span className="webdb-result-snippet">
                           {item.content.slice(0, 160)}...
                         </span>
@@ -1009,17 +1257,114 @@ ${uploadedFiles.length > 0 ? `Hochgeladene Dateien: ${uploadedFiles.map(f => f.n
               </div>
             )}
 
+            <div className="webdb-section">
+              <h3 className="results-title">🧹 {t('filterTitle')}</h3>
+              <div className="webdb-filter-fields">
+                <textarea
+                  className="webdb-textarea"
+                  placeholder={t('filterIncludePlaceholder')}
+                  value={filterInclude}
+                  onChange={(event) => setFilterInclude(event.target.value)}
+                  aria-label={t('filterIncludeAria')}
+                />
+                <textarea
+                  className="webdb-textarea"
+                  placeholder={t('filterExcludePlaceholder')}
+                  value={filterExclude}
+                  onChange={(event) => setFilterExclude(event.target.value)}
+                  aria-label={t('filterExcludeAria')}
+                />
+              </div>
+              <div className="webdb-row">
+                <button
+                  className="webdb-action"
+                  onClick={handleFilterPreview}
+                  disabled={filterBusy}
+                >
+                  {filterBusy ? t('filterPreviewBusy') : t('filterPreviewAction')}
+                </button>
+                <button
+                  className="webdb-action"
+                  onClick={handleFilterDelete}
+                  disabled={filterBusy || filterPreviewTotal === 0}
+                >
+                  {filterBusy ? t('filterDeleteBusy') : t('filterDeleteAction')}
+                </button>
+              </div>
+              {filterError && <p className="webdb-error">{filterError}</p>}
+              {filterPreviewTotal > 0 && (
+                <div className="webdb-filter-preview">
+                  <span className="webdb-filter-count">
+                    {t('filterPreviewLabel')}: {filterPreviewTotal}
+                  </span>
+                  <div className="webdb-results">
+                    {filterPreviewItems.map((item) => (
+                      <div key={item.id} className="webdb-result">
+                        <span className="webdb-result-url">{item.url}</span>
+                        <span className="webdb-result-title">{item.title || t('untitled')}</span>
+                      </div>
+                    ))}
+                  </div>
+                  {filterPreviewTotal > filterPreviewItems.length && (
+                    <span className="webdb-empty">
+                      {t('filterPreviewMore')}
+                    </span>
+                  )}
+                </div>
+              )}
+            </div>
+
+            <div className="webdb-section">
+              <h3 className="results-title">📝 {t('applicationsTitle')}</h3>
+              <div className="webdb-applications">
+                <label className="webdb-label">{t('templateSelectLabel')}</label>
+                <select
+                  className="webdb-input"
+                  value={selectedTemplateId}
+                  onChange={(event) => setSelectedTemplateId(event.target.value)}
+                  aria-label={t('templateSelectAria')}
+                >
+                  <option value="">{t('templateNone')}</option>
+                  {templateFiles.map((file) => (
+                    <option key={file.id} value={file.id}>
+                      {file.name}
+                    </option>
+                  ))}
+                </select>
+                <textarea
+                  className="webdb-textarea"
+                  placeholder={t('applicationInstructionPlaceholder')}
+                  value={applicationInstruction}
+                  onChange={(event) => setApplicationInstruction(event.target.value)}
+                  aria-label={t('applicationInstructionAria')}
+                />
+                <button
+                  className="webdb-action"
+                  onClick={handleGenerateApplications}
+                  disabled={applicationBusy}
+                >
+                  {applicationBusy ? t('applicationBusyLabel') : t('applicationAction')}
+                </button>
+                {applicationProgress.total > 0 && (
+                  <span className="webdb-progress-count">
+                    {applicationProgress.current}/{applicationProgress.total}
+                  </span>
+                )}
+                {applicationError && <p className="webdb-error">{applicationError}</p>}
+              </div>
+            </div>
+
             {previewError && <p className="webdb-error">{previewError}</p>}
             {previewResults.length > 0 && (
               <div className="webdb-preview">
                 <div className="webdb-preview-header">
-                  <span>🌐 Web-Treffer</span>
+                  <span>🌐 {t('webResultsTitle')}</span>
                   <div className="webdb-preview-actions">
                     <button className="webdb-link" onClick={() => handleSelectAllPreview(true)}>
-                      Alle
+                      {t('selectAll')}
                     </button>
                     <button className="webdb-link" onClick={() => handleSelectAllPreview(false)}>
-                      Keine
+                      {t('selectNone')}
                     </button>
                   </div>
                 </div>
@@ -1033,7 +1378,7 @@ ${uploadedFiles.length > 0 ? `Hochgeladene Dateien: ${uploadedFiles.map(f => f.n
                       />
                       <div className="webdb-preview-content">
                         <span className="webdb-result-url">{item.url}</span>
-                        <span className="webdb-result-title">{item.title || 'Ohne Titel'}</span>
+                        <span className="webdb-result-title">{item.title || t('untitled')}</span>
                         <span className="webdb-result-snippet">
                           {item.content.slice(0, 120)}...
                         </span>
@@ -1046,7 +1391,7 @@ ${uploadedFiles.length > 0 ? `Hochgeladene Dateien: ${uploadedFiles.map(f => f.n
                   onClick={handleSaveSelected}
                   disabled={saveBusy}
                 >
-                  {saveBusy ? 'Speichere...' : 'Ausgewahlte speichern'}
+                  {saveBusy ? t('saveBusyLabel') : t('saveSelected')}
                 </button>
               </div>
             )}
@@ -1078,7 +1423,7 @@ ${uploadedFiles.length > 0 ? `Hochgeladene Dateien: ${uploadedFiles.map(f => f.n
           <button
             className="settings-close"
             onClick={() => setSettingsPanelOpen(false)}
-            aria-label="Close chat settings"
+            aria-label={t('closeChatSettingsAria')}
           >
             ✕
           </button>
@@ -1099,7 +1444,7 @@ ${uploadedFiles.length > 0 ? `Hochgeladene Dateien: ${uploadedFiles.map(f => f.n
               value={chatSettings.temperature}
               onChange={handleTemperatureChange}
               className="slider"
-              aria-label="Temperature"
+              aria-label={t('temperatureAria')}
             />
             <p className="setting-hint">
               0 = {t('precise')}, 1 = {t('creative')}
@@ -1113,23 +1458,23 @@ ${uploadedFiles.length > 0 ? `Hochgeladene Dateien: ${uploadedFiles.map(f => f.n
               value={chatSettings.model}
               onChange={handleModelChange}
               className="setting-select"
-              aria-label="AI Model"
+              aria-label={t('modelAria')}
             >
               <option value="gpt-4">GPT-4</option>
               <option value="gpt-3.5">GPT-3.5 Turbo</option>
               <option value="claude">Claude</option>
-              <option value="local">{t('model')} lokal</option>
+              <option value="local">{t('model')} {t('localLabel')}</option>
             </select>
           </div>
 
           {/* AI Service Selection */}
           <div className="setting-item">
-            <label className="setting-label">🔌 KI-Service</label>
+            <label className="setting-label">🔌 {t('aiServiceLabel')}</label>
             <select
               value={aiProvider}
               onChange={(e) => setAiProvider(e.target.value)}
               className="setting-select"
-              aria-label="AI Service Provider"
+              aria-label={t('aiServiceAria')}
             >
               {availableServices.map((service) => (
                 <option key={service.provider} value={service.provider}>
@@ -1143,21 +1488,21 @@ ${uploadedFiles.length > 0 ? `Hochgeladene Dateien: ${uploadedFiles.map(f => f.n
           {/* API Key Input (if required) */}
           {availableServices.find(s => s.provider === aiProvider)?.requiresKey && (
             <div className="setting-item">
-              <label className="setting-label">🔑 API-Schlüssel</label>
+              <label className="setting-label">🔑 {t('apiKeyLabel')}</label>
               <button
                 className="setting-btn"
                 onClick={() => setShowApiKeyInput(!showApiKeyInput)}
               >
-                {showApiKeyInput ? 'Verstecken' : 'Eingeben'}
+                {showApiKeyInput ? t('apiKeyHide') : t('apiKeyShow')}
               </button>
               {showApiKeyInput && (
                 <input
                   type="password"
-                  placeholder="Geben Sie Ihren API-Schlüssel ein"
+                  placeholder={t('apiKeyPlaceholder')}
                   value={aiApiKey}
                   onChange={(e) => setAiApiKey(e.target.value)}
                   className="setting-input"
-                  aria-label="API Key"
+                  aria-label={t('apiKeyAria')}
                 />
               )}
             </div>
@@ -1166,14 +1511,14 @@ ${uploadedFiles.length > 0 ? `Hochgeladene Dateien: ${uploadedFiles.map(f => f.n
           {/* Custom API URL (for Ollama, Local) */}
           {(aiProvider === 'ollama' || aiProvider === 'local') && (
             <div className="setting-item">
-              <label className="setting-label">🌐 API-URL</label>
+              <label className="setting-label">🌐 {t('apiUrlLabel')}</label>
               <input
                 type="text"
                 placeholder="http://localhost:11434"
                 value={aiApiUrl}
                 onChange={(e) => setAiApiUrl(e.target.value)}
                 className="setting-input"
-                aria-label="Custom API URL"
+                aria-label={t('apiUrlAria')}
               />
             </div>
           )}
@@ -1215,7 +1560,7 @@ ${uploadedFiles.length > 0 ? `Hochgeladene Dateien: ${uploadedFiles.map(f => f.n
               onChange={handleSystemPromptChange}
               placeholder={t('systemPromptPlaceholder')}
               className="setting-textarea"
-              aria-label="Chat system prompt"
+              aria-label={t('chatSystemPromptAria')}
             />
           </div>
         </div>
@@ -1228,7 +1573,7 @@ ${uploadedFiles.length > 0 ? `Hochgeladene Dateien: ${uploadedFiles.map(f => f.n
           <button
             className="settings-close"
             onClick={() => setGlobalSettingsOpen(false)}
-            aria-label="Close global settings"
+            aria-label={t('closeGlobalSettingsAria')}
           >
             ✕
           </button>
@@ -1286,9 +1631,9 @@ ${uploadedFiles.length > 0 ? `Hochgeladene Dateien: ${uploadedFiles.map(f => f.n
               onChange={handleGlobalSystemPromptChange}
               placeholder={t('globalSystemPromptPlaceholder')}
               className="setting-textarea"
-              aria-label="Job search profile"
+              aria-label={t('jobSearchProfileAria')}
             />
-            <p className="setting-hint">Beschreibe deine Jobsuche-Kriterien und Karriereziele</p>
+            <p className="setting-hint">{t('jobSearchProfileHint')}</p>
           </div>
         </div>
       </div>
@@ -1307,7 +1652,7 @@ ${uploadedFiles.length > 0 ? `Hochgeladene Dateien: ${uploadedFiles.map(f => f.n
               <button
                 className="modal-close"
                 onClick={() => setHelpModalOpen(false)}
-                aria-label="Close help"
+                aria-label={t('closeHelpAria')}
               >
                 ✕
               </button>
@@ -1324,7 +1669,7 @@ ${uploadedFiles.length > 0 ? `Hochgeladene Dateien: ${uploadedFiles.map(f => f.n
                 className="modal-btn"
                 onClick={() => setHelpModalOpen(false)}
               >
-                Schließen
+                {t('closeModal')}
               </button>
               <a
                 href="https://github.com/yourusername/repo"
@@ -1332,7 +1677,7 @@ ${uploadedFiles.length > 0 ? `Hochgeladene Dateien: ${uploadedFiles.map(f => f.n
                 rel="noopener noreferrer"
                 className="modal-btn modal-btn-secondary"
               >
-                📖 Dokumentation
+                📖 {t('documentation')}
               </a>
             </div>
           </div>

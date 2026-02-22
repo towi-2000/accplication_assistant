@@ -9,3 +9,13 @@ CREATE TABLE IF NOT EXISTS pages (
   created_at TEXT NOT NULL DEFAULT (datetime('now')),
   updated_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
+CREATE TABLE IF NOT EXISTS files (
+  id TEXT PRIMARY KEY,
+  name TEXT NOT NULL,
+  mime TEXT,
+  size INTEGER,
+  content_base64 TEXT NOT NULL,
+  content_hash TEXT,
+  uploaded_at TEXT NOT NULL DEFAULT (datetime('now'))
+);

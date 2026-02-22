@@ -8,11 +8,23 @@ const port = process.env.PORT || 5174
 
 const MAX_URLS = 1000
 const FETCH_CONCURRENCY = 8
+const JOB_CACHE_TTL_MS = Number(process.env.JOB_CACHE_TTL_MS || 5 * 60 * 1000)
+const JOB_SEARCH_TIMEOUT_MS = Number(process.env.JOB_SEARCH_TIMEOUT_MS || 8000)
+const JOB_SEARCH_MAX_ITEMS = Number(process.env.JOB_SEARCH_MAX_ITEMS || 200)
+
+const jobCache = new Map()
 
 app.use(cors())
 app.use(express.json({ limit: '2mb' }))
 
 const sanitizeText = (text) => text.replace(/\s+/g, ' ').trim()
+const parseKeywordList = (input) => {
+  if (!input) return []
+  return String(input)
+    .split(/[\n,]+/)
+    .map(item => item.trim())
+    .filter(Boolean)
+}
 
 const extractTitle = (html) => {
   const match = html.match(/<title[^>]*>([\s\S]*?)<\/title>/i)
@@ -28,6 +40,62 @@ const extractText = (html) => {
     .replace(/<style[\s\S]*?<\/style>/gi, ' ')
   const noTags = withoutScripts.replace(/<[^>]+>/g, ' ')
   return sanitizeText(noTags)
+}
+
+const stripHtml = (text) => {
+  if (!text) return ''
+  return sanitizeText(String(text).replace(/<[^>]+>/g, ' '))
+}
+
+const fetchJson = async (url, options = {}) => {
+  const controller = new AbortController()
+  const timeout = setTimeout(() => controller.abort(), JOB_SEARCH_TIMEOUT_MS)
+
+  try {
+    const response = await fetch(url, { ...options, signal: controller.signal })
+    if (!response.ok) {
+      throw new Error(`Request failed (${response.status})`)
+    }
+    return await response.json()
+  } finally {
+    clearTimeout(timeout)
+  }
+}
+
+const normalizeJobItem = (source, job) => {
+  const title = job.title || job.position || job.name || 'Job'
+  const company = job.company || job.company_name || job.employerName || job.company_name_display || 'Unbekannt'
+  const location = job.location || job.locationName || job.candidate_required_location || null
+  const url = job.url || job.jobUrl || job.redirect_url || job.apply_url || job.refs?.landing_page || job.link || ''
+  const description = stripHtml(job.description || job.jobDescription || job.snippet || job.body || '')
+  const createdAt = job.created_at || job.publication_date || job.date || job.created || null
+
+  return {
+    id: `${source}:${job.id || job.jobId || job.slug || url || title}`,
+    title,
+    company,
+    location,
+    url,
+    source,
+    description,
+    createdAt
+  }
+}
+
+const dedupeJobs = (items) => {
+  const seen = new Set()
+  const result = []
+
+  for (const item of items) {
+    const key = item.url || item.id
+    if (!key || seen.has(key)) {
+      continue
+    }
+    seen.add(key)
+    result.push(item)
+  }
+
+  return result
 }
 
 const hashContent = (content) => {
@@ -223,6 +291,158 @@ app.post('/api/preview', async (req, res) => {
   return res.json({ items: results })
 })
 
+// ===== JOB SEARCH ENDPOINTS =====
+
+const searchJobSources = async (query, limit) => {
+  const tasks = []
+  const perSourceLimit = Math.max(1, Math.min(limit, 50))
+
+  const arbeitnowUrl = `https://www.arbeitnow.com/api/job-board-api?search=${encodeURIComponent(query)}`
+  tasks.push(
+    fetchJson(arbeitnowUrl)
+      .then((payload) => {
+        const data = Array.isArray(payload?.data) ? payload.data : []
+        return data.slice(0, perSourceLimit).map((job) => normalizeJobItem('Arbeitnow', job))
+      })
+      .catch(() => [])
+  )
+
+  const remotiveUrl = `https://remotive.com/api/remote-jobs?search=${encodeURIComponent(query)}`
+  tasks.push(
+    fetchJson(remotiveUrl)
+      .then((payload) => {
+        const jobs = Array.isArray(payload?.jobs) ? payload.jobs : []
+        return jobs.slice(0, perSourceLimit).map((job) => normalizeJobItem('Remotive', job))
+      })
+      .catch(() => [])
+  )
+
+  const theMuseKey = process.env.THEMUSE_API_KEY
+  const theMuseParams = new URLSearchParams({
+    page: '1',
+    descending: 'true',
+    query
+  })
+  if (theMuseKey) {
+    theMuseParams.set('api_key', theMuseKey)
+  }
+  const theMuseUrl = `https://www.themuse.com/api/public/jobs?${theMuseParams.toString()}`
+  tasks.push(
+    fetchJson(theMuseUrl)
+      .then((payload) => {
+        const jobs = Array.isArray(payload?.results) ? payload.results : []
+        return jobs.slice(0, perSourceLimit).map((job) => {
+          const mapped = normalizeJobItem('The Muse', {
+            ...job,
+            company: job.company?.name,
+            location: job.locations?.[0]?.name,
+            url: job.refs?.landing_page
+          })
+          return mapped
+        })
+      })
+      .catch(() => [])
+  )
+
+  const adzunaId = process.env.ADZUNA_APP_ID
+  const adzunaKey = process.env.ADZUNA_APP_KEY
+  if (adzunaId && adzunaKey) {
+    const adzunaParams = new URLSearchParams({
+      app_id: adzunaId,
+      app_key: adzunaKey,
+      what: query,
+      results_per_page: String(perSourceLimit),
+      'content-type': 'application/json'
+    })
+    const adzunaUrl = `https://api.adzuna.com/v1/api/jobs/de/search/1?${adzunaParams.toString()}`
+    tasks.push(
+      fetchJson(adzunaUrl)
+        .then((payload) => {
+          const jobs = Array.isArray(payload?.results) ? payload.results : []
+          return jobs.slice(0, perSourceLimit).map((job) => normalizeJobItem('Adzuna', {
+            ...job,
+            company: job.company?.display_name,
+            location: job.location?.display_name,
+            url: job.redirect_url
+          }))
+        })
+        .catch(() => [])
+    )
+  }
+
+  const reedKey = process.env.REED_API_KEY
+  if (reedKey) {
+    const reedParams = new URLSearchParams({
+      keywords: query,
+      resultsToTake: String(perSourceLimit)
+    })
+    const reedUrl = `https://www.reed.co.uk/api/1.0/search?${reedParams.toString()}`
+    const authHeader = `Basic ${Buffer.from(`${reedKey}:`).toString('base64')}`
+
+    tasks.push(
+      fetchJson(reedUrl, { headers: { Authorization: authHeader } })
+        .then((payload) => {
+          const jobs = Array.isArray(payload?.results) ? payload.results : []
+          return jobs.slice(0, perSourceLimit).map((job) => normalizeJobItem('Reed', {
+            ...job,
+            company: job.employerName,
+            location: job.locationName,
+            url: job.jobUrl,
+            description: job.jobDescription
+          }))
+        })
+        .catch(() => [])
+    )
+  }
+
+  const remoteOkUrl = 'https://remoteok.com/api'
+  tasks.push(
+    fetchJson(remoteOkUrl, { headers: { 'User-Agent': 'JobAssistant/1.0' } })
+      .then((payload) => {
+        const jobs = Array.isArray(payload) ? payload.filter((item) => item && item.id && item.position) : []
+        const normalizedQuery = query.toLowerCase()
+        const filtered = jobs.filter((job) => {
+          const haystack = `${job.position} ${job.company} ${job.description || ''}`.toLowerCase()
+          return haystack.includes(normalizedQuery)
+        })
+        return filtered.slice(0, perSourceLimit).map((job) => normalizeJobItem('RemoteOK', {
+          ...job,
+          title: job.position,
+          company: job.company,
+          url: job.url || job.apply_url,
+          description: job.description
+        }))
+      })
+      .catch(() => [])
+  )
+
+  const results = await Promise.all(tasks)
+  return dedupeJobs(results.flat()).slice(0, JOB_SEARCH_MAX_ITEMS)
+}
+
+app.get('/api/jobs/search', async (req, res) => {
+  const query = (req.query.q || '').toString().trim()
+  const limit = Math.max(1, Math.min(parseInt(req.query.limit || '50', 10), JOB_SEARCH_MAX_ITEMS))
+
+  if (!query) {
+    return res.json({ items: [] })
+  }
+
+  const cacheKey = `${query.toLowerCase()}::${limit}`
+  const cached = jobCache.get(cacheKey)
+  if (cached && Date.now() - cached.timestamp < JOB_CACHE_TTL_MS) {
+    return res.json({ items: cached.items })
+  }
+
+  try {
+    const items = await searchJobSources(query, limit)
+    jobCache.set(cacheKey, { timestamp: Date.now(), items })
+    return res.json({ items })
+  } catch (error) {
+    return res.status(500).json({ error: 'Job search failed' })
+  }
+})
+
 // ===== FILE UPLOAD ENDPOINTS =====
 
 /**
@@ -231,7 +451,8 @@ app.post('/api/preview', async (req, res) => {
  * Body: { fileName, fileContent (base64), chatId }
  */
 app.post('/api/upload', async (req, res) => {
-  const { fileName, fileContent, chatId } = req.body || {}
+  const { fileName, fileContent, fileType, fileSize, chatId } = req.body || {}
+  const db = await getDb(chatId)
 
   if (!fileName || !fileContent) {
     return res.status(400).json({
@@ -252,18 +473,20 @@ app.post('/api/upload', async (req, res) => {
     // Generate file ID
     const fileId = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
 
-    // Store file metadata (in production: use real file storage or S3)
-    const fileData = {
-      id: fileId,
-      name: fileName,
-      contentHash: crypto.createHash('sha256').update(fileContent).digest('hex'),
-      uploadedAt: new Date().toISOString()
-    }
+    const contentHash = crypto.createHash('sha256').update(fileContent).digest('hex')
+
+    await db.run(
+      `INSERT INTO files (id, name, mime, size, content_base64, content_hash, uploaded_at)
+       VALUES (?, ?, ?, ?, ?, ?, datetime('now'))`,
+      [fileId, fileName, fileType || null, fileSize || null, fileContent, contentHash]
+    )
 
     return res.status(201).json({
       success: true,
       fileId,
       fileName,
+      fileType: fileType || null,
+      fileSize: fileSize || null,
       message: 'Datei erfolgreich hochgeladen'
     })
   } catch (error) {
@@ -281,14 +504,137 @@ app.post('/api/upload', async (req, res) => {
  */
 app.get('/api/files', (req, res) => {
   const { chatId } = req.query
-  
-  // Note: In production würde man Dateien aus DB oder File Storage abrufen
-  // Für Demo: Return leeres Array
-  
-  return res.json({
-    files: [],
-    message: 'Datei-Storage ist in dieser Demo-Version nicht implementiert'
+  getDb(chatId).then(async (db) => {
+    const rows = await db.all(
+      'SELECT id, name, mime, size, uploaded_at FROM files ORDER BY uploaded_at DESC'
+    )
+
+    const files = rows.map((row) => ({
+      id: row.id,
+      name: row.name,
+      mime: row.mime,
+      size: row.size,
+      uploadedAt: row.uploaded_at
+    }))
+
+    return res.json({ files })
+  }).catch((error) => {
+    return res.status(500).json({ error: error.message })
   })
+})
+
+app.get('/api/files/:id', async (req, res) => {
+  const { chatId } = req.query
+  const db = await getDb(chatId)
+  const fileId = req.params.id
+
+  const row = await db.get(
+    'SELECT id, name, mime, size, content_base64, uploaded_at FROM files WHERE id = ?',
+    [fileId]
+  )
+
+  if (!row) {
+    return res.status(404).json({ error: 'File not found' })
+  }
+
+  return res.json({
+    id: row.id,
+    name: row.name,
+    mime: row.mime,
+    size: row.size,
+    contentBase64: row.content_base64,
+    uploadedAt: row.uploaded_at
+  })
+})
+
+// ===== DATABASE FILTER ENDPOINTS =====
+
+const buildKeepClause = (includeTerms, excludeTerms) => {
+  const clauses = []
+  const params = []
+
+  if (includeTerms.length > 0) {
+    const includeClause = includeTerms.map(() => (
+      '(lower(content) LIKE ? OR lower(coalesce(title, \'\')) LIKE ? OR lower(url) LIKE ?)'
+    )).join(' AND ')
+    clauses.push(includeClause)
+    includeTerms.forEach((term) => {
+      const pattern = `%${term.toLowerCase()}%`
+      params.push(pattern, pattern, pattern)
+    })
+  }
+
+  if (excludeTerms.length > 0) {
+    const excludeClause = excludeTerms.map(() => (
+      '(lower(content) NOT LIKE ? AND lower(coalesce(title, \'\')) NOT LIKE ? AND lower(url) NOT LIKE ?)'
+    )).join(' AND ')
+    clauses.push(excludeClause)
+    excludeTerms.forEach((term) => {
+      const pattern = `%${term.toLowerCase()}%`
+      params.push(pattern, pattern, pattern)
+    })
+  }
+
+  return {
+    clause: clauses.length > 0 ? clauses.join(' AND ') : '1=1',
+    params
+  }
+}
+
+app.post('/api/pages/filter-preview', async (req, res) => {
+  const { include, exclude, chatId, limit } = req.body || {}
+  const db = await getDb(chatId)
+  const includeTerms = Array.isArray(include) ? include : parseKeywordList(include)
+  const excludeTerms = Array.isArray(exclude) ? exclude : parseKeywordList(exclude)
+  const previewLimit = Math.min(Math.max(parseInt(limit || '50', 10), 1), 200)
+
+  const { clause, params } = buildKeepClause(includeTerms, excludeTerms)
+  const deleteClause = `NOT (${clause})`
+
+  const totalRow = await db.get(
+    `SELECT COUNT(*) as total FROM pages WHERE ${deleteClause}`,
+    params
+  )
+  const items = await db.all(
+    `SELECT id, url, title, content, status_code, content_hash, fetched_at, created_at, updated_at
+     FROM pages WHERE ${deleteClause} ORDER BY id DESC LIMIT ?`,
+    [...params, previewLimit]
+  )
+
+  return res.json({ items, total: totalRow?.total || 0 })
+})
+
+app.post('/api/pages/filter-delete', async (req, res) => {
+  const { include, exclude, chatId } = req.body || {}
+  const db = await getDb(chatId)
+  const includeTerms = Array.isArray(include) ? include : parseKeywordList(include)
+  const excludeTerms = Array.isArray(exclude) ? exclude : parseKeywordList(exclude)
+
+  const { clause, params } = buildKeepClause(includeTerms, excludeTerms)
+  const deleteClause = `NOT (${clause})`
+
+  const rows = await db.all(
+    `SELECT id FROM pages WHERE ${deleteClause}`,
+    params
+  )
+  const ids = rows.map((row) => row.id)
+
+  await db.run(
+    `DELETE FROM pages WHERE ${deleteClause}`,
+    params
+  )
+
+  return res.json({ deletedCount: ids.length, deletedIds: ids })
+})
+
+app.get('/api/pages/all', async (req, res) => {
+  const { chatId } = req.query
+  const db = await getDb(chatId)
+  const rows = await db.all(
+    'SELECT id, url, title, content, status_code, content_hash, fetched_at, created_at, updated_at FROM pages ORDER BY id DESC'
+  )
+
+  return res.json({ items: rows })
 })
 
 // ===== DOCUMENTATION ENDPOINTS =====

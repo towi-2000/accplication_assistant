@@ -25,7 +25,13 @@ import type {
   PreviewResponse,
   WebPreviewItem,
   SearchResultItem,
-  AdvancedSearchResponse
+  AdvancedSearchResponse,
+  JobSearchResponse,
+  FileListResponse,
+  FileContentResponse,
+  DbFilterPreviewResponse,
+  DbFilterDeleteResponse,
+  PageListResponse
 } from './type'
 
 // Typsichere Deserialisierung der JSON-Konfigurationsdaten
@@ -244,9 +250,10 @@ export const filterWebResults = (items: WebPageRecord[], query: string): WebPage
 export const updateConversationTitle = (
   conversations: Conversation[],
   conversationId: number,
-  title: string
+  title: string,
+  fallbackTitle = 'Neue Konversation'
 ): Conversation[] => {
-  const nextTitle = title.trim() || 'Neue Konversation'
+  const nextTitle = title.trim() || fallbackTitle
   return conversations.map(conv => (
     conv.id === conversationId ? { ...conv, title: nextTitle } : conv
   ))
@@ -1085,4 +1092,78 @@ export const extractTextFromFile = async (
   }
 
   return `[File: ${file.name}]`
+}
+
+export const searchJobs = async (query: string, limit = 50): Promise<JobSearchResponse> => {
+  const params = new URLSearchParams({
+    q: query,
+    limit: String(limit)
+  })
+  const response = await fetch(`${API_BASE}/api/jobs/search?${params.toString()}`)
+
+  if (!response.ok) {
+    throw new Error('Job search failed')
+  }
+
+  return response.json()
+}
+
+export const fetchFiles = async (chatId: number): Promise<FileListResponse> => {
+  const response = await fetch(`${API_BASE}/api/files?chatId=${chatId}`)
+  if (!response.ok) {
+    throw new Error('Fetch files failed')
+  }
+  return response.json()
+}
+
+export const fetchFileContent = async (fileId: string, chatId: number): Promise<FileContentResponse> => {
+  const response = await fetch(`${API_BASE}/api/files/${fileId}?chatId=${chatId}`)
+  if (!response.ok) {
+    throw new Error('Fetch file failed')
+  }
+  return response.json()
+}
+
+export const previewDbFilter = async (
+  include: string[],
+  exclude: string[],
+  chatId: number
+): Promise<DbFilterPreviewResponse> => {
+  const response = await fetch(`${API_BASE}/api/pages/filter-preview`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ include, exclude, chatId })
+  })
+
+  if (!response.ok) {
+    throw new Error('Filter preview failed')
+  }
+
+  return response.json()
+}
+
+export const deleteFilteredDb = async (
+  include: string[],
+  exclude: string[],
+  chatId: number
+): Promise<DbFilterDeleteResponse> => {
+  const response = await fetch(`${API_BASE}/api/pages/filter-delete`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ include, exclude, chatId })
+  })
+
+  if (!response.ok) {
+    throw new Error('Filter delete failed')
+  }
+
+  return response.json()
+}
+
+export const fetchAllPages = async (chatId: number): Promise<PageListResponse> => {
+  const response = await fetch(`${API_BASE}/api/pages/all?chatId=${chatId}`)
+  if (!response.ok) {
+    throw new Error('Fetch pages failed')
+  }
+  return response.json()
 }

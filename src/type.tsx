@@ -190,6 +190,53 @@ export type PreviewResponse = {
   items: WebPreviewItem[]
 }
 
+// ===== JOB SEARCH TYPES =====
+
+export type JobSearchItem = {
+  id: string
+  title: string
+  company: string
+  location: string | null
+  url: string
+  source: string
+  description: string
+  createdAt?: string
+}
+
+export type JobSearchResponse = {
+  items: JobSearchItem[]
+}
+
+export type FileRecord = {
+  id: string
+  name: string
+  mime: string | null
+  size: number | null
+  uploadedAt?: string
+}
+
+export type FileListResponse = {
+  files: FileRecord[]
+}
+
+export type FileContentResponse = FileRecord & {
+  contentBase64: string
+}
+
+export type DbFilterPreviewResponse = {
+  items: WebPageRecord[]
+  total: number
+}
+
+export type DbFilterDeleteResponse = {
+  deletedCount: number
+  deletedIds: number[]
+}
+
+export type PageListResponse = {
+  items: WebPageRecord[]
+}
+
 // ===== PROGRESS & STATE TYPES =====
 
 /**
