@@ -394,6 +394,38 @@ body {
   gap: 8px;
 }
 
+.webdb-search-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.webdb-search-row .webdb-input {
+  flex: 1;
+}
+
+.webdb-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+  background-color: transparent;
+  color: var(--text-color);
+  font-size: 16px;
+  cursor: pointer;
+  transition: border-color 0.2s ease, background-color 0.2s ease;
+}
+
+.webdb-icon:hover:not(:disabled) {
+  border-color: var(--primary-color);
+  background-color: rgba(16, 163, 127, 0.08);
+}
+
+.webdb-icon:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
 .webdb-input {
   flex: 1;
   padding: 10px 12px;
@@ -427,6 +459,14 @@ body {
 .webdb-action:not(:disabled):hover {
   transform: translateY(-1px);
   box-shadow: 0 4px 10px rgba(16, 163, 127, 0.2);
+}
+
+.webdb-add {
+  align-self: flex-start;
+  background-color: transparent;
+  color: var(--primary-color);
+  border: 1px dashed var(--primary-color);
+  box-shadow: none;
 }
 
 .webdb-error {

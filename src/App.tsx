@@ -13,7 +13,7 @@
  * - Settings-Panels: Floating Panels für Job-Such-Einstellungen und globale Einstellungen
  */
 
-import React, { useState, ChangeEvent, KeyboardEvent, useEffect } from 'react'
+import React, { useState, ChangeEvent, KeyboardEvent, useEffect, useRef } from 'react'
 import './App.css'
 import data from './data.json'
 import type {
@@ -74,7 +74,10 @@ function App(): React.ReactElement {
   const [crawlBusy, setCrawlBusy] = useState<boolean>(false)
   const [crawlError, setCrawlError] = useState<string>('')
 
-  const [searchQuery, setSearchQuery] = useState<string>('')
+  const [searchFields, setSearchFields] = useState<Array<{ id: number; value: string }>>([
+    { id: 1, value: '' }
+  ])
+  const [lastSearchQueries, setLastSearchQueries] = useState<string[]>([])
   const [searchResults, setSearchResults] = useState<WebPageRecord[]>([])
   const [searchBusy, setSearchBusy] = useState<boolean>(false)
   const [searchError, setSearchError] = useState<string>('')
@@ -85,6 +88,8 @@ function App(): React.ReactElement {
   const [previewError, setPreviewError] = useState<string>('')
   const [saveBusy, setSaveBusy] = useState<boolean>(false)
   const [saveProgress, setSaveProgress] = useState<{ current: number; total: number }>({ current: 0, total: 0 })
+
+  const searchFieldIdRef = useRef<number>(1)
 
   // ========== UI STATE ==========
   // sidebarOpen: Sidebar ist auf mobilen Geräten ausblenbar (hamburger menu)
@@ -488,9 +493,16 @@ ${uploadedFiles.length > 0 ? `Hochgeladene Dateien: ${uploadedFiles.map(f => f.n
     }
   }
 
-  const handleSearch = async (): Promise<void> => {
-    if (!searchQuery.trim()) {
-      setSearchError('Bitte einen Suchbegriff eingeben.')
+  const getNormalizedQueries = (fields: Array<{ id: number; value: string }>): string[] => {
+    return fields
+      .map((field) => field.value.trim())
+      .filter((value) => value.length > 0)
+  }
+
+  const handleSearchAll = async (): Promise<void> => {
+    const normalizedQueries = getNormalizedQueries(searchFields)
+    if (normalizedQueries.length === 0) {
+      setSearchError('Bitte mindestens einen Suchbegriff eingeben.')
       return
     }
 
@@ -499,32 +511,90 @@ ${uploadedFiles.length > 0 ? `Hochgeladene Dateien: ${uploadedFiles.map(f => f.n
     setPreviewError('')
     setPreviewResults([])
     setPreviewSelected({})
-    try {
-      const response = await searchPages(searchQuery.trim(), activeConversationId, 1000, 0)
-      setSearchResults(response.items)
-      setDbResultsQuery('')
 
-      if (response.items.length === 0) {
+    const errorMessages: string[] = []
+
+    try {
+      const searchSettled = await Promise.allSettled(
+        normalizedQueries.map((query) => searchPages(query, activeConversationId, 1000, 0))
+      )
+
+      const mergedResults = new Map<number, WebPageRecord>()
+      const emptyQueries: string[] = []
+      const failedQueries: string[] = []
+
+      searchSettled.forEach((result, index) => {
+        const query = normalizedQueries[index]
+        if (result.status === 'fulfilled') {
+          const items = result.value.items
+          if (items.length === 0) {
+            emptyQueries.push(query)
+          }
+          items.forEach((item) => {
+            if (!mergedResults.has(item.id)) {
+              mergedResults.set(item.id, item)
+            }
+          })
+        } else {
+          failedQueries.push(query)
+        }
+      })
+
+      setSearchResults(Array.from(mergedResults.values()))
+      setDbResultsQuery('')
+      setLastSearchQueries(normalizedQueries)
+
+      if (failedQueries.length > 0) {
+        errorMessages.push(`Suche fehlgeschlagen fuer: ${failedQueries.join(', ')}`)
+      }
+
+      if (emptyQueries.length > 0) {
         const urls = parseUrlList(urlInput)
         if (urls.length === 0) {
-          setSearchError('Keine Treffer in der Datenbank. Bitte URLs angeben.')
-          return
-        }
-        if (urls.length > 1000) {
-          setSearchError('Bitte maximal 1000 URLs eingeben.')
-          return
-        }
+          errorMessages.push(`Keine Treffer in der Datenbank fuer: ${emptyQueries.join(', ')}. Bitte URLs angeben.`)
+        } else if (urls.length > 1000) {
+          errorMessages.push('Bitte maximal 1000 URLs eingeben.')
+        } else {
+          setPreviewBusy(true)
+          const previewSettled = await Promise.allSettled(
+            emptyQueries.map((query) => previewUrls(limitUrls(urls, 1000), query))
+          )
 
-        setPreviewBusy(true)
-        const preview = await previewUrls(limitUrls(urls, 1000), searchQuery.trim())
-        setPreviewResults(preview.items)
-        setPreviewSelected(buildSelectionMap(preview.items))
+          const previewItems: WebPreviewItem[] = []
+          let previewFailed = false
+
+          previewSettled.forEach((result) => {
+            if (result.status === 'fulfilled') {
+              previewItems.push(...result.value.items)
+            } else {
+              previewFailed = true
+            }
+          })
+
+          const uniquePreview = new Map<string, WebPreviewItem>()
+          previewItems.forEach((item) => {
+            if (!uniquePreview.has(item.url)) {
+              uniquePreview.set(item.url, item)
+            }
+          })
+
+          const previewList = Array.from(uniquePreview.values())
+          setPreviewResults(previewList)
+          setPreviewSelected(buildSelectionMap(previewList))
+
+          if (previewFailed) {
+            setPreviewError('Web-Vorschau fehlgeschlagen. Bitte Server pruefen.')
+          }
+        }
       }
     } catch (error) {
-      setSearchError('Suche fehlgeschlagen. Bitte Server pruefen.')
+      errorMessages.push('Suche fehlgeschlagen. Bitte Server pruefen.')
     } finally {
       setSearchBusy(false)
       setPreviewBusy(false)
+      if (errorMessages.length > 0) {
+        setSearchError(errorMessages.join(' '))
+      }
     }
   }
 
@@ -563,9 +633,29 @@ ${uploadedFiles.length > 0 ? `Hochgeladene Dateien: ${uploadedFiles.map(f => f.n
         setSaveProgress({ current: saved, total: toSave.length })
       }
 
-      const refreshed = await searchPages(searchQuery.trim(), activeConversationId, 20, 0)
-      setSearchResults(refreshed.items)
-      setDbResultsQuery('')
+      const refreshQueries = lastSearchQueries.length > 0
+        ? lastSearchQueries
+        : getNormalizedQueries(searchFields)
+
+      if (refreshQueries.length > 0) {
+        const refreshedSettled = await Promise.allSettled(
+          refreshQueries.map((query) => searchPages(query, activeConversationId, 20, 0))
+        )
+
+        const refreshedResults = new Map<number, WebPageRecord>()
+        refreshedSettled.forEach((result) => {
+          if (result.status === 'fulfilled') {
+            result.value.items.forEach((item) => {
+              if (!refreshedResults.has(item.id)) {
+                refreshedResults.set(item.id, item)
+              }
+            })
+          }
+        })
+
+        setSearchResults(Array.from(refreshedResults.values()))
+        setDbResultsQuery('')
+      }
       setPreviewResults([])
       setPreviewSelected({})
     } catch (error) {
@@ -589,6 +679,7 @@ ${uploadedFiles.length > 0 ? `Hochgeladene Dateien: ${uploadedFiles.map(f => f.n
   const savePercent = saveProgress.total > 0
     ? Math.round((saveProgress.current / saveProgress.total) * 100)
     : 0
+  const hasSearchQuery = searchFields.some((field) => field.value.trim().length > 0)
 
   return (
     <div className="app-container">
@@ -809,19 +900,53 @@ ${uploadedFiles.length > 0 ? `Hochgeladene Dateien: ${uploadedFiles.map(f => f.n
             <div className="search-divider"></div>
 
             <h3 className="search-title">🔍 Suchen</h3>
+            <div className="webdb-search-fields">
+              {searchFields.map((field, index) => (
+                <div key={field.id} className="webdb-row webdb-search-row">
+                  <input
+                    type="text"
+                    value={field.value}
+                    onChange={(e) => setSearchFields((prev) => (
+                      prev.map((entry) => (
+                        entry.id === field.id
+                          ? { ...entry, value: e.target.value }
+                          : entry
+                      ))
+                    ))}
+                    placeholder={`Suchbegriff ${index + 1}`}
+                    className="webdb-input"
+                    aria-label={`Search query ${index + 1}`}
+                  />
+                  <button
+                    className="webdb-icon"
+                    onClick={() => setSearchFields((prev) => (
+                      prev.length > 1 ? prev.filter((entry) => entry.id !== field.id) : prev
+                    ))}
+                    disabled={searchFields.length === 1}
+                    aria-label={`Search field ${index + 1} entfernen`}
+                    type="button"
+                  >
+                    x
+                  </button>
+                </div>
+              ))}
+              <button
+                className="webdb-action webdb-add"
+                onClick={() => setSearchFields((prev) => {
+                  const nextId = searchFieldIdRef.current + 1
+                  searchFieldIdRef.current = nextId
+                  return [...prev, { id: nextId, value: '' }]
+                })}
+                type="button"
+              >
+                Feld hinzufuegen
+              </button>
+            </div>
             <div className="webdb-row">
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Suchbegriff eingeben"
-                className="webdb-input"
-                aria-label="Search query"
-              />
               <button
                 className="webdb-action"
-                onClick={handleSearch}
-                disabled={searchBusy}
+                onClick={handleSearchAll}
+                disabled={searchBusy || !hasSearchQuery}
               >
                 {searchBusy ? 'Suche...' : 'Suche'}
               </button>
