@@ -256,3 +256,94 @@ export const buildSelectionMap = (items: WebPreviewItem[]): Record<string, boole
     return acc
   }, {} as Record<string, boolean>)
 }
+
+// ===== PROGRESS & ERROR UTILITIES =====
+
+/**
+ * Berechnet den Fortschrittsprozentsatz
+ * Wird für Progress-Bars bei Speicher- und Crawl-Operationen verwendet
+ * 
+ * @param current - Aktuell verarbeitete Items
+ * @param total - Gesamt Anzahl der Items
+ * @returns Prozentsatz (0-100) gerundet auf ganze Zahl
+ */
+export const calculateProgress = (current: number, total: number): number => {
+  if (total === 0) return 0
+  return Math.round((current / total) * 100)
+}
+
+/**
+ * Generiert eine Fortschritts-Label für UI-Anzeige
+ * Verschiedene Labels je nach Operation (Suche, Preview, Crawl, Speichern)
+ * 
+ * @param isSearching - Sucht die App aktuell
+ * @param isPreviewing - Werden Web-URLs vorgeschaut
+ * @param isCrawling - Crawlt die App aktuell
+ * @param isSaving - Speichert die App aktuell
+ * @returns Aussagekräftiger Label für den User
+ */
+export const getProgressLabel = (
+  isSearching: boolean,
+  isPreviewing: boolean,
+  isCrawling: boolean,
+  isSaving: boolean
+): string => {
+  if (isSearching) return 'Suche in Datenbank...'
+  if (isPreviewing) return 'Pruefe Web-URLs...'
+  if (isCrawling) return 'Speichere URLs...'
+  if (isSaving) return 'Speichere Auswahl...'
+  return ''
+}
+
+/**
+ * Prüft ob eine Progress-Anzeige sichtbar sein sollte
+ * True wenn eine beliebige Operation läuft
+ * 
+ * @param isSearching - Sucht die App aktuell
+ * @param isPreviewing - Werden Web-URLs vorgeschaut
+ * @param isCrawling - Crawlt die App aktuell
+ * @param isSaving - Speichert die App aktuell
+ * @returns true wenn Progress-Indikator angezeigt werden sollte
+ */
+export const shouldShowProgress = (
+  isSearching: boolean,
+  isPreviewing: boolean,
+  isCrawling: boolean,
+  isSaving: boolean
+): boolean => {
+  return isSearching || isPreviewing || isCrawling || isSaving
+}
+
+// ===== URL & VALIDATION UTILITIES =====
+
+/**
+ * Validiert eine URL-Liste auf Plausibilität
+ * Prüft Länge, Format und Duplikate
+ * 
+ * @param urls - Zu validierende URL-Liste
+ * @param maxCount - Maximale Anzahl (default 1000)
+ * @returns { valid: boolean, count: number, error?: string }
+ */
+export const validateUrlList = (urls: string[], maxCount = 1000): { valid: boolean; count: number; error?: string } => {
+  if (urls.length === 0) {
+    return { valid: false, count: 0, error: 'Bitte mindestens eine URL eingeben.' }
+  }
+  if (urls.length > maxCount) {
+    return { valid: false, count: urls.length, error: `Bitte maximal ${maxCount} URLs eingeben.` }
+  }
+  return { valid: true, count: urls.length }
+}
+
+/**
+ * Validiert einen Suchbegriff
+ * Prüft ob der String nicht leer ist
+ * 
+ * @param query - Zu validierender Suchbegriff
+ * @returns { valid: boolean, error?: string }
+ */
+export const validateSearchQuery = (query: string): { valid: boolean; error?: string } => {
+  if (!query.trim()) {
+    return { valid: false, error: 'Bitte einen Suchbegriff eingeben.' }
+  }
+  return { valid: true }
+}

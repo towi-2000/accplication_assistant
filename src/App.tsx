@@ -530,15 +530,13 @@ function App(): React.ReactElement {
 
       {/* ===== MAIN CHAT AREA ===== */}
       {/* 
-        Hauptbereich der Anwendung mit:
-        - Header mit Titel und Einstellungsbutton
-        - Nachrichtenbereich (Chat-Verlauf)
-        - Input-Bereich für neue Nachrichten
-        - Settings-Panels (werden über Overlay angezeigt)
+        Hauptbereich mit drei Spalten:
+        1. Chat-Bereich: Messages + Input
+        2. Suchbereich: URL-Eingabe + Suchbegriffe
+        3. Ergebnisbereich: Gefilterte Ergebnisse
       */}
       <main className="chat-container">
-        {/* ===== HEADER ===== */}
-        {/* Kopfzeile mit Anwendungstitel und Chat-Einstellungs-Button */}
+        {/* ===== HEADER (FULL WIDTH) ===== */}
         <header className="chat-header">
           <div className="header-content">
             <div className="title-section">
@@ -556,221 +554,53 @@ function App(): React.ReactElement {
           </div>
         </header>
 
-        {/* ===== MESSAGES AREA ===== */}
-        {/* 
-          Zeigt den gesamten Chat-Verlauf an
-          - Jede Nachricht wird mit Avatar und Text angezeigt
-          - User-Nachrichten sind rechts, AI-Nachrichten sind links
-        */}
-        <div className="messages-area">
-          {messages.map((message) => (
-            <div key={message.id} className={`message ${message.sender}`}>
-              <div className="message-content">
-                {message.sender === 'ai' && <span className="avatar">🤖</span>}
-                <div className="message-text">{message.text}</div>
-                {message.sender === 'user' && <span className="avatar">👤</span>}
+        {/* ===== LEFT COLUMN: CHAT ===== */}
+        <div className="chat-column chat-column-left">
+          {/* ===== MESSAGES AREA ===== */}
+          <div className="messages-area">
+            {messages.map((message) => (
+              <div key={message.id} className={`message ${message.sender}`}>
+                <div className="message-content">
+                  {message.sender === 'ai' && <span className="avatar">🤖</span>}
+                  <div className="message-text">{message.text}</div>
+                  {message.sender === 'user' && <span className="avatar">👤</span>}
+                </div>
               </div>
-            </div>
-          ))}
-        </div>
-
-        {/* ===== OVERLAY LAYERS ===== */}
-        {/* 
-          Halbdurchsichtige Overlay-Layer hinter den Settings-Panels
-          Dient als visueller Hintergrund und zum Schließen beim Klick
-        */}
-        {settingsPanelOpen && (
-          <div
-            className="settings-overlay"
-            onClick={() => setSettingsPanelOpen(false)}
-            aria-hidden="true"
-          />
-        )}
-
-        {globalSettingsOpen && (
-          <div
-            className="settings-overlay"
-            onClick={() => setGlobalSettingsOpen(false)}
-            aria-hidden="true"
-          />
-        )}
-
-        {/* ===== CHAT SETTINGS PANEL ===== */}
-        {/* 
-          Floating Panel auf der rechten Seite für Jobsuche-spezifische Einstellungen:
-          - Temperature Slider: Wie präzise vs. kreativ die Vorschläge sein sollen
-          - Model Selector: Welches KI-Modell verwenden
-          - Writing Style Buttons: Ton der Bewerbungsschreiben (Professionell, Standard, Enthusiastisch, Technisch)
-          - System Prompt: Wie die KI sich selbst in diesem Chat vorstellen sollte
-        */}
-        <div className={`settings-panel ${settingsPanelOpen ? 'open' : ''}`}>
-          <div className="settings-header">
-            <h2 className="settings-title">{t('chatSettings')}</h2>
-            <button
-              className="settings-close"
-              onClick={() => setSettingsPanelOpen(false)}
-              aria-label="Close chat settings"
-            >
-              ✕
-            </button>
+            ))}
           </div>
 
-          <div className="settings-content">
-            {/* Temperature Slider */}
-            <div className="setting-item">
-              <div className="setting-label-container">
-                <label className="setting-label">🎚️ {t('temperature')}</label>
-                <span className="setting-value">{chatSettings.temperature.toFixed(2)}</span>
-              </div>
-              <input
-                type="range"
-                min="0"
-                max="1"
-                step="0.1"
-                value={chatSettings.temperature}
-                onChange={handleTemperatureChange}
-                className="slider"
-                aria-label="Temperature"
+          {/* ===== INPUT AREA ===== */}
+          <div className="input-area">
+            <div className="input-container">
+              <textarea
+                value={input}
+                onChange={handleInputChange}
+                onKeyPress={handleKeyPress}
+                placeholder={t('inputPlaceholder')}
+                className="message-input"
+                aria-label="Message input"
               />
-              <p className="setting-hint">
-                0 = {t('precise')}, 1 = {t('creative')}
-              </p>
-            </div>
-
-            {/* Model Selection */}
-            <div className="setting-item">
-              <label className="setting-label">🤖 {t('model')}</label>
-              <select
-                value={chatSettings.model}
-                onChange={handleModelChange}
-                className="setting-select"
-                aria-label="AI Model"
+              <button
+                onClick={handleSendMessage}
+                className="send-btn"
+                aria-label="Send message"
+                disabled={!isMessageValid(input)}
               >
-                <option value="gpt-4">GPT-4</option>
-                <option value="gpt-3.5">GPT-3.5 Turbo</option>
-                <option value="claude">Claude</option>
-                <option value="local">{t('model')} lokal</option>
-              </select>
+                ➤
+              </button>
             </div>
-
-            {/* Writing Style */}
-            <div className="setting-item">
-              <label className="setting-label">✍️ {t('writingStyle')}</label>
-              <div className="setting-buttons">
-                {[
-                  { key: 'formal', label: t('formal') },
-                  { key: 'normal', label: t('normal') },
-                  { key: 'locker', label: t('casual') },
-                  { key: 'technisch', label: t('technical') }
-                ].map((style) => (
-                  <button
-                    key={style.key}
-                    className={`style-btn ${chatSettings.writingStyle === style.key ? 'active' : ''}`}
-                    onClick={() => handleWritingStyleChange(style.key)}
-                    aria-pressed={chatSettings.writingStyle === style.key}
-                  >
-                    {style.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* System Prompt */}
-            <div className="setting-item">
-              <label className="setting-label">📝 {t('systemPrompt')}</label>
-              <textarea
-                value={chatSettings.systemPrompt}
-                onChange={handleSystemPromptChange}
-                placeholder={t('systemPromptPlaceholder')}
-                className="setting-textarea"
-                aria-label="Chat system prompt"
-              />
-            </div>
+            <p className="input-hint">{t('disclaimer')}</p>
           </div>
         </div>
 
-        {/* ===== GLOBAL SETTINGS PANEL ===== */}
-        {/* 
-          Floating Panel für globale Anwendungseinstellungen:
-          - Language Selector: Sprache der UI wechseln
-          - Theme Selector: Design-Theme wechseln
-          - Global System Prompt: Standard-Anweisung für alle neuen Chats
-        */}
-        <div className={`settings-panel ${globalSettingsOpen ? 'open' : ''}`}>
-          <div className="settings-header">
-            <h2 className="settings-title">{t('globalSettings')}</h2>
-            <button
-              className="settings-close"
-              onClick={() => setGlobalSettingsOpen(false)}
-              aria-label="Close global settings"
-            >
-              ✕
-            </button>
-          </div>
-
-          <div className="settings-content">
-            {/* Language Selection */}
-            <div className="setting-item">
-              <label className="setting-label">🌍 {t('language')}</label>
-              <div className="language-grid">
-                {Object.keys(translations).map((lang) => (
-                  <button
-                    key={lang}
-                    className={`language-btn ${globalSettings.language === lang ? 'active' : ''}`}
-                    onClick={() => handleLanguageChange(lang)}
-                    aria-pressed={globalSettings.language === lang}
-                  >
-                    {lang.toUpperCase()}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Theme Selection */}
-            <div className="setting-item">
-              <label className="setting-label">🎨 {t('theme')}</label>
-              <div className="theme-grid">
-                {Object.entries(themes).map(([themeKey, themeData]) => (
-                  <button
-                    key={themeKey}
-                    className={`theme-btn ${globalSettings.theme === themeKey ? 'active' : ''}`}
-                    onClick={() => handleThemeChange(themeKey)}
-                    title={themeData.name}
-                    aria-pressed={globalSettings.theme === themeKey}
-                  >
-                    <span
-                      className="theme-preview"
-                      style={{ backgroundColor: themeData.primaryColor }}
-                    ></span>
-                    {themeData.name}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Global System Prompt */}
-            <div className="setting-item">
-              <label className="setting-label">🎯 {t('globalSystemPrompt')}</label>
-              <textarea
-                value={globalSettings.globalSystemPrompt}
-                onChange={handleGlobalSystemPromptChange}
-                placeholder={t('globalSystemPromptPlaceholder')}
-                className="setting-textarea"
-                aria-label="Job search profile"
-              />
-              <p className="setting-hint">Beschreibe deine Jobsuche-Kriterien und Karriereziele</p>
-            </div>
-          </div>
-        </div>
-
-        {/* ===== WEB PAGE DATABASE ===== */}
-        <section className="webdb-panel">
-          <div className="webdb-section">
-            <h3 className="webdb-title">Webseiten speichern</h3>
+        {/* ===== CENTER COLUMN: SEARCH INPUT ===== */}
+        <div className="chat-column chat-column-center">
+          <div className="search-panel">
+            <h3 className="search-title">📄 Webseiten erfassen</h3>
             <textarea
               value={urlInput}
               onChange={(e) => setUrlInput(e.target.value)}
-              placeholder="Eine URL pro Zeile"
+              placeholder="Eine URL pro Zeile (max. 1000)"
               className="webdb-textarea"
               aria-label="URL list"
             />
@@ -779,7 +609,7 @@ function App(): React.ReactElement {
               onClick={handleCrawl}
               disabled={crawlBusy}
             >
-              {crawlBusy ? 'Crawle...' : 'Crawl & speichern'}
+              {crawlBusy ? 'Crawle...' : 'Crawl & Speichern'}
             </button>
             {crawlError && <p className="webdb-error">{crawlError}</p>}
             {crawlResults.length > 0 && (
@@ -792,16 +622,16 @@ function App(): React.ReactElement {
                 ))}
               </div>
             )}
-          </div>
 
-          <div className="webdb-section">
-            <h3 className="webdb-title">Suche</h3>
+            <div className="search-divider"></div>
+
+            <h3 className="search-title">🔍 Suchen</h3>
             <div className="webdb-row">
               <input
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Suchbegriff"
+                placeholder="Suchbegriff eingeben"
                 className="webdb-input"
                 aria-label="Search query"
               />
@@ -814,6 +644,12 @@ function App(): React.ReactElement {
               </button>
             </div>
             {searchError && <p className="webdb-error">{searchError}</p>}
+          </div>
+        </div>
+
+        {/* ===== RIGHT COLUMN: RESULTS ===== */}
+        <div className="chat-column chat-column-right">
+          <div className="results-panel">
             {showProgress && (
               <div className="webdb-progress">
                 <div className={`webdb-progress-bar ${saveBusy ? 'determinate' : 'indeterminate'}`}>
@@ -829,9 +665,11 @@ function App(): React.ReactElement {
                 )}
               </div>
             )}
+
+            <h3 className="results-title">💾 Datenbank-Treffer</h3>
             <div className="webdb-results">
               {searchResults.length === 0 && !searchBusy && (
-                <span className="webdb-empty">Keine Treffer in der Datenbank</span>
+                <span className="webdb-empty">Keine Treffer</span>
               )}
             </div>
             {searchResults.length > 0 && (
@@ -862,14 +700,15 @@ function App(): React.ReactElement {
                 </div>
               </div>
             )}
+
             {previewError && <p className="webdb-error">{previewError}</p>}
             {previewResults.length > 0 && (
               <div className="webdb-preview">
                 <div className="webdb-preview-header">
-                  <span>Web-Treffer</span>
+                  <span>🌐 Web-Treffer</span>
                   <div className="webdb-preview-actions">
                     <button className="webdb-link" onClick={() => handleSelectAllPreview(true)}>
-                      Alle auswaehlen
+                      Alle
                     </button>
                     <button className="webdb-link" onClick={() => handleSelectAllPreview(false)}>
                       Keine
@@ -899,42 +738,185 @@ function App(): React.ReactElement {
                   onClick={handleSaveSelected}
                   disabled={saveBusy}
                 >
-                  {saveBusy ? 'Speichere...' : 'Ausgewaehlte speichern'}
+                  {saveBusy ? 'Speichere...' : 'Ausgewahlte speichern'}
                 </button>
               </div>
             )}
           </div>
-        </section>
-
-        {/* ===== INPUT AREA ===== */}
-        {/* 
-          Unterer Bereich mit:
-          - Textarea für Nachrichteneingabe
-          - Send-Button (mit Pfeil ➤)
-          - Disclaimer/Disclaimer-Text
-        */}
-        <div className="input-area">
-          <div className="input-container">
-            <textarea
-              value={input}
-              onChange={handleInputChange}
-              onKeyPress={handleKeyPress}
-              placeholder={t('inputPlaceholder')}
-              className="message-input"
-              aria-label="Message input"
-            />
-            <button
-              onClick={handleSendMessage}
-              className="send-btn"
-              aria-label="Send message"
-              disabled={!isMessageValid(input)}
-            >
-              ➤
-            </button>
-          </div>
-          <p className="input-hint">{t('disclaimer')}</p>
         </div>
       </main>
+
+      {/* ===== OVERLAY LAYERS ===== */}
+      {settingsPanelOpen && (
+        <div
+          className="settings-overlay"
+          onClick={() => setSettingsPanelOpen(false)}
+          aria-hidden="true"
+        />
+      )}
+
+      {globalSettingsOpen && (
+        <div
+          className="settings-overlay"
+          onClick={() => setGlobalSettingsOpen(false)}
+          aria-hidden="true"
+        />
+      )}
+
+      {/* ===== CHAT SETTINGS PANEL ===== */}
+      <div className={`settings-panel ${settingsPanelOpen ? 'open' : ''}`}>
+        <div className="settings-header">
+          <h2 className="settings-title">{t('chatSettings')}</h2>
+          <button
+            className="settings-close"
+            onClick={() => setSettingsPanelOpen(false)}
+            aria-label="Close chat settings"
+          >
+            ✕
+          </button>
+        </div>
+
+        <div className="settings-content">
+          {/* Temperature Slider */}
+          <div className="setting-item">
+            <div className="setting-label-container">
+              <label className="setting-label">🎚️ {t('temperature')}</label>
+              <span className="setting-value">{chatSettings.temperature.toFixed(2)}</span>
+            </div>
+            <input
+              type="range"
+              min="0"
+              max="1"
+              step="0.1"
+              value={chatSettings.temperature}
+              onChange={handleTemperatureChange}
+              className="slider"
+              aria-label="Temperature"
+            />
+            <p className="setting-hint">
+              0 = {t('precise')}, 1 = {t('creative')}
+            </p>
+          </div>
+
+          {/* Model Selection */}
+          <div className="setting-item">
+            <label className="setting-label">🤖 {t('model')}</label>
+            <select
+              value={chatSettings.model}
+              onChange={handleModelChange}
+              className="setting-select"
+              aria-label="AI Model"
+            >
+              <option value="gpt-4">GPT-4</option>
+              <option value="gpt-3.5">GPT-3.5 Turbo</option>
+              <option value="claude">Claude</option>
+              <option value="local">{t('model')} lokal</option>
+            </select>
+          </div>
+
+          {/* Writing Style */}
+          <div className="setting-item">
+            <label className="setting-label">✍️ {t('writingStyle')}</label>
+            <div className="setting-buttons">
+              {[
+                { key: 'formal', label: t('formal') },
+                { key: 'normal', label: t('normal') },
+                { key: 'locker', label: t('casual') },
+                { key: 'technisch', label: t('technical') }
+              ].map((style) => (
+                <button
+                  key={style.key}
+                  className={`style-btn ${chatSettings.writingStyle === style.key ? 'active' : ''}`}
+                  onClick={() => handleWritingStyleChange(style.key)}
+                  aria-pressed={chatSettings.writingStyle === style.key}
+                >
+                  {style.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* System Prompt */}
+          <div className="setting-item">
+            <label className="setting-label">📝 {t('systemPrompt')}</label>
+            <textarea
+              value={chatSettings.systemPrompt}
+              onChange={handleSystemPromptChange}
+              placeholder={t('systemPromptPlaceholder')}
+              className="setting-textarea"
+              aria-label="Chat system prompt"
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* ===== GLOBAL SETTINGS PANEL ===== */}
+      <div className={`settings-panel ${globalSettingsOpen ? 'open' : ''}`}>
+        <div className="settings-header">
+          <h2 className="settings-title">{t('globalSettings')}</h2>
+          <button
+            className="settings-close"
+            onClick={() => setGlobalSettingsOpen(false)}
+            aria-label="Close global settings"
+          >
+            ✕
+          </button>
+        </div>
+
+        <div className="settings-content">
+          {/* Language Selection */}
+          <div className="setting-item">
+            <label className="setting-label">🌍 {t('language')}</label>
+            <div className="language-grid">
+              {Object.keys(translations).map((lang) => (
+                <button
+                  key={lang}
+                  className={`language-btn ${globalSettings.language === lang ? 'active' : ''}`}
+                  onClick={() => handleLanguageChange(lang)}
+                  aria-pressed={globalSettings.language === lang}
+                >
+                  {lang.toUpperCase()}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Theme Selection */}
+          <div className="setting-item">
+            <label className="setting-label">🎨 {t('theme')}</label>
+            <div className="theme-grid">
+              {Object.entries(themes).map(([themeKey, themeData]) => (
+                <button
+                  key={themeKey}
+                  className={`theme-btn ${globalSettings.theme === themeKey ? 'active' : ''}`}
+                  onClick={() => handleThemeChange(themeKey)}
+                  title={themeData.name}
+                  aria-pressed={globalSettings.theme === themeKey}
+                >
+                  <span
+                    className="theme-preview"
+                    style={{ backgroundColor: themeData.primaryColor }}
+                  ></span>
+                  {themeData.name}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Global System Prompt */}
+          <div className="setting-item">
+            <label className="setting-label">🎯 {t('globalSystemPrompt')}</label>
+            <textarea
+              value={globalSettings.globalSystemPrompt}
+              onChange={handleGlobalSystemPromptChange}
+              placeholder={t('globalSystemPromptPlaceholder')}
+              className="setting-textarea"
+              aria-label="Job search profile"
+            />
+            <p className="setting-hint">Beschreibe deine Jobsuche-Kriterien und Karriereziele</p>
+          </div>
+        </div>
+      </div>
     </div>
   )
 }

@@ -189,3 +189,49 @@ export type WebPreviewItem = {
 export type PreviewResponse = {
   items: WebPreviewItem[]
 }
+
+// ===== PROGRESS & STATE TYPES =====
+
+/**
+ * Fortschritts-Tracking für lange Operationen
+ * Wird verwendet beim Speichern von URLs und anderen Batch-Operationen
+ */
+export type ProgressState = {
+  current: number   // Bereits verarbeitete Items
+  total: number     // Gesamt Anzahl der Items
+}
+
+/**
+ * Filter- und Suchzustände für die Web-Datenbank
+ * Verwaltet die aktuelle Suchanfrage und Filterung
+ */
+export type DatabaseQueryState = {
+  searchQuery: string     // Aktueller Suchbegriff
+  filterQuery: string     // Filter für Treffer
+  selectedUrls: Record<string, boolean>  // Ausgewählte URLs für Speicherung
+}
+
+/**
+ * Konfiguration für API-Verbindungen
+ * Zentrale Verwaltung aller API-Endpoints
+ */
+export type ApiConfig = {
+  baseUrl: string
+  endpoints: {
+    crawl: string
+    search: string
+    preview: string
+    savePage: string
+  }
+}
+
+/**
+ * Aggregierte Fehler- und Erfolgsmeldungen
+ * Für zentrale Fehlerbehandlung und Feedback
+ */
+export type OperationResult<T> = {
+  success: boolean
+  data?: T
+  error?: string
+  statusCode?: number
+}
