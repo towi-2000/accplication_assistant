@@ -291,6 +291,29 @@ app.get('/api/files', (req, res) => {
   })
 })
 
+// ===== DOCUMENTATION ENDPOINTS =====
+
+app.get('/docs/:filename', (req, res) => {
+  const filename = req.params.filename
+  const allowedFiles = ['AI_SERVICES.md', 'README.md', 'PROJECT_DOCUMENTATION.md']
+  
+  if (!allowedFiles.includes(filename)) {
+    return res.status(404).json({ error: 'Documentation file not found' })
+  }
+
+  // Import fs dynamically for file reading
+  import('fs/promises').then(fs => {
+    fs.readFile(`./docs/${filename}`, 'utf8')
+      .then(content => {
+        res.type('text/markdown')
+        res.send(content)
+      })
+      .catch(() => {
+        res.status(404).json({ error: `File ${filename} not found` })
+      })
+  })
+})
+
 app.listen(port, () => {
   console.log(`API server running on http://localhost:${port}`)
 })
