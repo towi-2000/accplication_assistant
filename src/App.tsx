@@ -67,8 +67,6 @@ function App(): React.ReactElement {
   const [conversationSearch, setConversationSearch] = useState<string>('')
   const [editingConversationId, setEditingConversationId] = useState<number | null>(null)
   const [editingConversationTitle, setEditingConversationTitle] = useState<string>('')
-  // systemPromptApplied: Flag ob der globale Anfangsprompt bereits zur AI gesendet wurde
-  const [systemPromptApplied, setSystemPromptApplied] = useState<boolean>(false)
 
   // ========== WEB PAGE DB STATE ==========
   const [urlInput, setUrlInput] = useState<string>('')
@@ -200,7 +198,6 @@ function App(): React.ReactElement {
     setMessages([
       { id: 1, text: 'Hallo! Neue Jobsuche gestartet. Was für eine Position interessiert dich? 📋', sender: 'ai' }
     ])
-    setSystemPromptApplied(false)
     setSidebarOpen(false)
   }
 
@@ -233,7 +230,6 @@ function App(): React.ReactElement {
           setMessages([
             { id: 1, text: 'Hallo! Neue Jobsuche gestartet. Was fuer eine Position interessiert dich? 📋', sender: 'ai' }
           ])
-          setSystemPromptApplied(false)
         } else {
           const newId = getNextConversationId(prev)
           const newConversation: Conversation = {
@@ -244,7 +240,6 @@ function App(): React.ReactElement {
           setMessages([
             { id: 1, text: 'Hallo! Neue Jobsuche gestartet. Was fuer eine Position interessiert dich? 📋', sender: 'ai' }
           ])
-          setSystemPromptApplied(false)
           return [newConversation]
         }
       }
@@ -298,21 +293,16 @@ function App(): React.ReactElement {
   }
 
   /**
-   * Send a new message
-   * Validiert die Eingabe, erstellt eine User-Nachricht,
-   * speichert sie und ruft den KI-Service auf für eine Antwort
+   * Send message to AI
+   * Vereinfachte Logik: Nur Chat mit KI, keine Web-Suche
+   * KI hat Zugriff auf Datenbank des aktuellen Chats wenn nötig
    */
   const handleSendMessage = async (): Promise<void> => {
     if (!isMessageValid(input)) {
       return
     }
 
-    // Globales System-Prompt einmalig beim ersten Senden anwenden
-    if (globalSettings.globalSystemPrompt && !systemPromptApplied) {
-      setSystemPromptApplied(true)
-    }
-
-    // User-Nachricht erstellen und zu Historia hinzufügen
+    // User-Nachricht erstellen
     const newMessage: Message = {
       id: messages.length + 1,
       text: input,
@@ -320,6 +310,7 @@ function App(): React.ReactElement {
     }
     setMessages([...messages, newMessage])
     setInput('')
+    setFileUploadError('')
 
     // AI-Antwort abrufen
     setAiLoading(true)
@@ -327,10 +318,17 @@ function App(): React.ReactElement {
 
     try {
       // Prepare messages for API
+      // Kombiniere globale Instruktion + chat-spezifische Instruktion
+      const systemPrompt = `${globalSettings.globalSystemPrompt}
+
+${chatSettings.systemPrompt}
+
+${uploadedFiles.length > 0 ? `Hochgeladene Dateien: ${uploadedFiles.map(f => f.name).join(', ')}` : ''}`
+
       const messagesForApi = [
         {
           role: 'system' as const,
-          content: globalSettings.globalSystemPrompt + '\n\n' + chatSettings.systemPrompt
+          content: systemPrompt
         },
         ...messages.map(msg => ({
           role: msg.sender === 'user' ? ('user' as const) : ('assistant' as const),
@@ -355,13 +353,15 @@ function App(): React.ReactElement {
           model: chatSettings.model,
           temperature: chatSettings.temperature,
           messages: messagesForApi,
-          chatId: activeConversationId
+          chatId: activeConversationId,
+          // Files for AI context (in production: send base64 content)
+          files: uploadedFiles.length > 0 ? uploadedFiles.map(f => f.name) : undefined
         })
       })
 
       if (!response.ok) {
         const error = await response.json()
-        throw new Error(error.error || 'Failed to get AI response')
+        throw new Error(error.error || 'AI Anfrage fehlgeschlagen')
       }
 
       const data = await response.json()
@@ -372,7 +372,7 @@ function App(): React.ReactElement {
         text: data.content || 'Keine Antwort erhalten',
         sender: 'ai'
       }
-      setMessages((prev) => [...prev, newMessage, aiResponse])
+      setMessages((prev) => [...prev, aiResponse])
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : 'Unbekannter Fehler'
       setAiError(errorMsg)
@@ -380,10 +380,10 @@ function App(): React.ReactElement {
       // Add error message
       const errorMessage: Message = {
         id: messages.length + 2,
-        text: `❌ Fehler bei AI-Anfrage: ${errorMsg}`,
+        text: `❌ Fehler: ${errorMsg}`,
         sender: 'ai'
       }
-      setMessages((prev) => [...prev, newMessage, errorMessage])
+      setMessages((prev) => [...prev, errorMessage])
     } finally {
       setAiLoading(false)
     }
@@ -1167,8 +1167,55 @@ function App(): React.ReactElement {
           </div>
         </div>
       </div>
+
+      {/* ===== HELP MODAL ===== */}
+      {helpModalOpen && (
+        <>
+          <div
+            className="modal-overlay"
+            onClick={() => setHelpModalOpen(false)}
+            aria-hidden="true"
+          />
+          <div className="modal help-modal">
+            <div className="modal-header">
+              <h2 className="modal-title">❓ {t('helpTitle')}</h2>
+              <button
+                className="modal-close"
+                onClick={() => setHelpModalOpen(false)}
+                aria-label="Close help"
+              >
+                ✕
+              </button>
+            </div>
+            <div className="modal-content">
+              {t('helpText').split('\n').map((line, idx) => (
+                <p key={idx} className="help-line">
+                  {line}
+                </p>
+              ))}
+            </div>
+            <div className="modal-footer">
+              <button
+                className="modal-btn"
+                onClick={() => setHelpModalOpen(false)}
+              >
+                Schließen
+              </button>
+              <a
+                href="https://github.com/yourusername/repo"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="modal-btn modal-btn-secondary"
+              >
+                📖 Dokumentation
+              </a>
+            </div>
+          </div>
+        </>
+      )}
     </div>
   )
 }
 
 export default App
+

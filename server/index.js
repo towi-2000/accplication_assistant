@@ -223,6 +223,74 @@ app.post('/api/preview', async (req, res) => {
   return res.json({ items: results })
 })
 
+// ===== FILE UPLOAD ENDPOINTS =====
+
+/**
+ * POST /api/upload
+ * Speichert hochgeladene Dateien für die AI
+ * Body: { fileName, fileContent (base64), chatId }
+ */
+app.post('/api/upload', async (req, res) => {
+  const { fileName, fileContent, chatId } = req.body || {}
+
+  if (!fileName || !fileContent) {
+    return res.status(400).json({
+      success: false,
+      error: 'fileName and fileContent are required'
+    })
+  }
+
+  try {
+    // Validate file size (max 10MB base64 ≈ 7.5MB binary)
+    if (fileContent.length > 10 * 1024 * 1024) {
+      return res.status(400).json({
+        success: false,
+        error: 'Datei zu groß (Max. 10MB)'
+      })
+    }
+
+    // Generate file ID
+    const fileId = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+
+    // Store file metadata (in production: use real file storage or S3)
+    const fileData = {
+      id: fileId,
+      name: fileName,
+      contentHash: crypto.createHash('sha256').update(fileContent).digest('hex'),
+      uploadedAt: new Date().toISOString()
+    }
+
+    return res.status(201).json({
+      success: true,
+      fileId,
+      fileName,
+      message: 'Datei erfolgreich hochgeladen'
+    })
+  } catch (error) {
+    console.error('File upload error:', error)
+    return res.status(500).json({
+      success: false,
+      error: error.message
+    })
+  }
+})
+
+/**
+ * GET /api/files
+ * Ruft hochgeladene Dateien für einen Chat ab
+ */
+app.get('/api/files', (req, res) => {
+  const { chatId } = req.query
+  
+  // Note: In production würde man Dateien aus DB oder File Storage abrufen
+  // Für Demo: Return leeres Array
+  
+  return res.json({
+    files: [],
+    message: 'Datei-Storage ist in dieser Demo-Version nicht implementiert'
+  })
+})
+
 app.listen(port, () => {
   console.log(`API server running on http://localhost:${port}`)
 })
