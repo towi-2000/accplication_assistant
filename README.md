@@ -21,20 +21,58 @@ Eine moderne, vollständig responsive Browser-basierte Chat- und Recherche-Anwen
 
 ## 🚀 Quick Start
 
+### Option 1: Unified Dev Server (Empfohlen für Development) ⭐
 ```bash
 # Installation
 npm install
 
-# Terminal 1: Backend Server (Port 5174)
-npm run server
-
-# Terminal 2: Frontend Development (Port 5173)
+# Alles auf einem Port (5173)
 npm run dev
 
 # Browser öffnen
-# Frontend: http://localhost:5173
-# Backend: http://localhost:5174
+# http://localhost:5173
 ```
+✅ Schneller, einfacher, Hot-Reload funktioniert perfekt  
+✅ API und Frontend auf demselben Server
+
+### Option 2: Standalone Backend Server (für Full-Stack Debugging)
+```bash
+# Terminal 1 - Backend API (Port 5174)
+npm run server
+
+# Terminal 2 - Frontend (Port 5173)
+npm run dev
+
+# Browser öffnen
+# http://localhost:5173
+```
+✅ Debugge Frontend und Backend separat  
+✅ Ideal für API-Development  
+✅ Vite proxied automatisch zu :5174
+
+### Standalone Mode aktivieren
+
+Falls Sie einen separaten Express-Server starten wollen, können Sie Environment Variablen setzen:
+
+```bash
+# .env Datei erstellen
+VITE_API_BASE=http://localhost:5174
+VITE_API_PROXY=true
+```
+
+Oder direkt in Terminal (Linux/Mac):
+```bash
+export VITE_API_BASE=http://localhost:5174
+npm run dev
+```
+
+Windows PowerShell:
+```powershell
+$env:VITE_API_BASE = "http://localhost:5174"
+npm run dev
+```
+
+> **HINWEIS:** Der Standard ist Unified Mode (Option 1). Beide Modi werden vollständig unterstützt!
 
 ## 📁 Projektstruktur
 
@@ -219,13 +257,44 @@ Speichert in Datenbank
 
 ## 📚 Dokumentation
 
-- **[PROJECT_DOCUMENTATION.md](./PROJECT_DOCUMENTATION.md)** - Ausführliche 500+ Zeilen Dokumentation mit:
+Das Projekt ist umfangreich dokumentiert:
+
+### 📖 Hauptdokumente
+
+- **[ARCHITECTURE.md](./ARCHITECTURE.md)** ⭐ **LESEN SIE ZUERST**
+  - High-Level System Design
+  - Frontend + Backend Integration (Vite + Express)
+  - Datenfluss Diagramme
+  - Component Hierarchy
+  - State Management
+  - Performance Optimizations
+
+- **[API.md](./API.md)** - Vollständige REST API Referenz
+  - Alle 18 Endpoints dokumentiert
+  - Request/Response Beispiele
+  - Error Codes
+  - Rate Limiting
+  - cURL Testing Beispiele
+
+- **[DATABASE_SCHEMA.md](./DATABASE_SCHEMA.md)** - Datenbankstruktur
+  - Table Schemas (pages, files)
+  - Indizes & Constraints
+  - Mit Beispiel-Queries
+  - Performance Tips
+  - Backup/Restore Guides
+
+- **[PROJECT_DOCUMENTATION.md](./PROJECT_DOCUMENTATION.md)** - Detaillierte Feature-Dokumentation
   - Datei-Übersicht
-  - API-Spezifikation detailed
   - Type-Definitionen
   - CSS-Struktur & Grid
   - Best Practices
   - State Management Pattern
+
+- **[AI_SERVICES.md](./AI_SERVICES.md)** - KI-Service Setup & Anleitung
+  - Alle 5 Provider dokumentiert
+  - API-Key Management
+  - Feature Vergleiche
+  - Setup Step-by-Step
 
 ## ✅ Code-Qualität
 

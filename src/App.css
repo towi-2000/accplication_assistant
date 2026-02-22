@@ -321,8 +321,8 @@ body {
 .search-panel {
   display: flex;
   flex-direction: column;
-  gap: 16px;
-  padding: 20px 24px;
+  gap: 10px;
+  padding: 16px 20px;
   flex: 1;
 }
 
@@ -345,8 +345,8 @@ body {
 .results-panel {
   display: flex;
   flex-direction: column;
-  gap: 16px;
-  padding: 20px 24px;
+  gap: 10px;
+  padding: 16px 20px;
   flex: 1;
 }
 
@@ -374,30 +374,30 @@ body {
 .webdb-panel {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 10px;
   flex: 1;
 }
 
 .webdb-textarea {
-  min-height: 120px;
-  padding: 10px 12px;
-  border-radius: 8px;
+  min-height: 70px;
+  padding: 8px 10px;
+  border-radius: 6px;
   border: 1px solid var(--border-color);
   background-color: transparent;
   color: var(--text-color);
   resize: vertical;
-  font-size: 14px;
+  font-size: 13px;
 }
 
 .webdb-row {
   display: flex;
-  gap: 8px;
+  gap: 6px;
 }
 
 .webdb-search-fields {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 6px;
 }
 
 .webdb-search-row .webdb-input {
@@ -405,13 +405,13 @@ body {
 }
 
 .webdb-icon {
-  width: 36px;
-  height: 36px;
-  border-radius: 8px;
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
   border: 1px solid var(--border-color);
   background-color: transparent;
   color: var(--text-color);
-  font-size: 16px;
+  font-size: 14px;
   cursor: pointer;
   transition: border-color 0.2s ease, background-color 0.2s ease;
 }
@@ -428,22 +428,22 @@ body {
 
 .webdb-input {
   flex: 1;
-  padding: 10px 12px;
-  border-radius: 8px;
+  padding: 6px 8px;
+  border-radius: 6px;
   border: 1px solid var(--border-color);
   background-color: transparent;
   color: var(--text-color);
-  font-size: 14px;
+  font-size: 13px;
 }
 
 .webdb-action {
   align-self: flex-start;
-  padding: 10px 14px;
+  padding: 6px 10px;
   border: none;
-  border-radius: 8px;
+  border-radius: 6px;
   background-color: var(--primary-color);
   color: #fff;
-  font-size: 14px;
+  font-size: 12px;
   font-weight: 600;
   cursor: pointer;
   transition: transform 0.2s ease, box-shadow 0.2s ease;
@@ -483,22 +483,22 @@ body {
 }
 
 .webdb-section {
-  margin-top: 16px;
+  margin-top: 10px;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 6px;
 }
 
 .webdb-filter-fields {
   display: grid;
   grid-template-columns: 1fr;
-  gap: 10px;
+  gap: 6px;
 }
 
 .webdb-filter-preview {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 6px;
 }
 
 .webdb-filter-count {
@@ -515,7 +515,7 @@ body {
 .webdb-applications {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 6px;
 }
 
 .webdb-empty {
@@ -591,8 +591,8 @@ body {
 .webdb-db {
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  margin-top: 10px;
+  gap: 6px;
+  margin-top: 6px;
 }
 
 .webdb-db-search {
@@ -801,8 +801,11 @@ body {
   color: #1a1a1a;
   background-color: #e8e8e8;
   resize: none;
-  max-height: 120px;
+  min-height: 44px;
+  max-height: 300px;
+  overflow: hidden;
   transition: all 0.2s ease;
+  line-height: 1.4;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -1336,26 +1339,26 @@ body {
   }
 
   .chat-container {
-    margin-top: 60px;
+    margin-top: 56px;
     overflow: visible;
   }
 
   .message-content {
-    max-width: 82%;
+    max-width: 85%;
   }
 
   .chat-header {
-    padding: 12px 16px;
+    padding: 10px 12px;
   }
 
   .app-title {
-    font-size: 18px;
+    font-size: 16px;
   }
 
   .settings-btn {
-    width: 30px;
-    height: 30px;
-    font-size: 14px;
+    width: 26px;
+    height: 26px;
+    font-size: 12px;
   }
 
   .app-subtitle {
@@ -1363,69 +1366,71 @@ body {
   }
 
   .messages-area {
-    padding: 14px 10px;
-    gap: 10px;
+    padding: 10px 6px;
+    gap: 6px;
   }
 
   .message-text {
-    font-size: 13px;
-    padding: 10px 14px;
+    font-size: 12px;
+    padding: 8px 12px;
   }
 
   .input-area {
-    padding: 12px 14px 14px;
+    padding: 10px 12px 12px;
   }
 
   .message-input {
-    padding: 10px 12px;
-    font-size: 13px;
-    max-height: 100px;
+    padding: 8px 10px;
+    font-size: 12px;
+    max-height: 80px;
   }
 
   .send-btn {
-    height: 40px;
-    min-width: 40px;
-    font-size: 16px;
+    height: 36px;
+    min-width: 36px;
+    font-size: 14px;
   }
 
   .input-container {
-    gap: 8px;
+    gap: 6px;
   }
 
   .input-hint {
-    font-size: 11px;
-    margin-top: 6px;
+    font-size: 10px;
+    margin-top: 4px;
   }
 
   .new-chat-btn {
-    padding: 10px 14px;
-    font-size: 13px;
-    gap: 6px;
+    padding: 8px 10px;
+    font-size: 12px;
+    gap: 4px;
   }
 
   .sidebar-btn {
-    padding: 8px 10px;
-    font-size: 13px;
+    padding: 6px 8px;
+    font-size: 11px;
   }
 
   .sidebar-header {
-    margin-bottom: 16px;
+    margin-bottom: 12px;
+    padding: 8px 0;
   }
 
   .sidebar-footer {
-    gap: 6px;
-    padding-top: 12px;
+    gap: 4px;
+    padding-top: 8px;
+    font-size: 11px;
   }
 
   .conversations-title {
-    font-size: 11px;
-    margin-bottom: 8px;
+    font-size: 10px;
+    margin-bottom: 6px;
   }
 
   .conversation-item {
-    padding: 10px;
-    margin-bottom: 6px;
-    font-size: 13px;
+    padding: 6px;
+    margin-bottom: 2px;
+    font-size: 11px;
   }
 }
 
@@ -1440,53 +1445,53 @@ body {
   }
 
   .menu-toggle {
-    width: 40px;
-    height: 40px;
-    font-size: 20px;
-    top: 12px;
-    left: 12px;
+    width: 36px;
+    height: 36px;
+    font-size: 18px;
+    top: 8px;
+    left: 8px;
   }
 
   .chat-container {
-    margin-top: 52px;
+    margin-top: 48px;
   }
 
   .chat-header {
-    padding: 10px 12px;
-    gap: 8px;
+    padding: 8px 10px;
+    gap: 6px;
   }
 
   .app-title {
-    font-size: 16px;
+    font-size: 14px;
   }
 
   .settings-btn {
-    width: 28px;
-    height: 28px;
-    font-size: 13px;
+    width: 24px;
+    height: 24px;
+    font-size: 12px;
   }
 
   .messages-area {
-    padding: 12px 8px;
-    gap: 8px;
+    padding: 8px 4px;
+    gap: 4px;
   }
 
   .message {
-    margin: 0 -4px;
+    margin: 0 -2px;
   }
 
   .message-content {
-    max-width: 88%;
+    max-width: 92%;
   }
 
   .avatar {
-    font-size: 20px;
+    font-size: 16px;
   }
 
   .message-text {
-    font-size: 13px;
-    padding: 10px 12px;
-    border-radius: 10px;
+    font-size: 12px;
+    padding: 8px 10px;
+    border-radius: 8px;
   }
 
   .message.user .message-text {
@@ -1498,70 +1503,125 @@ body {
   }
 
   .input-area {
-    padding: 10px 12px 12px;
+    padding: 8px 10px 10px;
     gap: 0;
   }
 
   .input-container {
-    gap: 6px;
-    margin-bottom: 6px;
+    gap: 4px;
+    margin-bottom: 4px;
   }
 
   .message-input {
-    padding: 10px;
-    font-size: 13px;
-    max-height: 80px;
+    padding: 8px 10px;
+    font-size: 12px;
+    min-height: 36px;
+    max-height: 60px;
   }
 
   .message-input::placeholder {
-    font-size: 12px;
+    font-size: 11px;
   }
 
   .send-btn {
-    height: 38px;
-    min-width: 38px;
+    height: 36px;
+    min-width: 36px;
     padding: 0;
-    font-size: 14px;
+    font-size: 13px;
     flex-shrink: 0;
   }
 
   .input-hint {
-    font-size: 10px;
-    margin-top: 4px;
+    font-size: 9px;
+    margin-top: 2px;
   }
 
   .new-chat-btn {
-    padding: 10px 12px;
-    font-size: 12px;
+    padding: 8px 10px;
+    font-size: 11px;
   }
 
   .sidebar-btn {
-    padding: 8px;
-    font-size: 12px;
+    padding: 6px;
+    font-size: 11px;
   }
 
   .sidebar-header {
-    margin-bottom: 12px;
+    margin-bottom: 10px;
+    min-height: 48px;
+    padding: 8px 0;
   }
 
   .sidebar-footer {
-    gap: 4px;
-    padding-top: 8px;
-    font-size: 12px;
+    gap: 2px;
+    padding-top: 6px;
+    font-size: 11px;
   }
 
   .conversations {
-    margin-bottom: 12px;
+    margin-bottom: 8px;
   }
 
   .conversations-title {
-    font-size: 10px;
-    margin-bottom: 6px;
+    font-size: 9px;
+    margin-bottom: 4px;
   }
 
   .conversation-item {
-    padding: 8px;
+    padding: 6px;
+    margin-bottom: 2px;
+    font-size: 11px;
+  }
+
+  .search-panel {
+    gap: 10px;
+    padding: 12px 10px;
+  }
+
+  .search-title {
+    font-size: 11px;
     margin-bottom: 4px;
+  }
+
+  .results-panel {
+    gap: 10px;
+    padding: 12px 10px;
+  }
+
+  .results-title {
+    font-size: 11px;
+    margin-bottom: 4px;
+  }
+
+  .webdb-textarea {
+    min-height: 50px;
+    font-size: 11px;
+    padding: 6px 8px;
+  }
+
+  .webdb-input {
+    padding: 6px 8px;
+    font-size: 11px;
+  }
+
+  .webdb-action {
+    padding: 6px 8px;
+    font-size: 11px;
+  }
+
+  .file-upload-btn {
+    padding: 8px 10px;
+    font-size: 12px;
+  }
+
+  .uploaded-files-dropdown-container {
+    padding: 6px 8px;
+    gap: 4px;
+    margin-bottom: 6px;
+  }
+
+  .uploaded-files-dropdown {
+    padding: 6px 8px;
     font-size: 12px;
   }
 
@@ -1577,16 +1637,16 @@ body {
 @media (max-width: 768px) {
   .settings-panel {
     width: 80vw;
-    max-width: 320px;
+    max-width: 300px;
   }
 
   .settings-header {
-    padding: 16px;
+    padding: 12px;
   }
 
   .settings-content {
-    padding: 16px;
-    gap: 20px;
+    padding: 12px;
+    gap: 14px;
   }
 
   .setting-buttons {
@@ -1616,31 +1676,32 @@ body {
   }
 
   .settings-header {
-    padding: 14px;
+    padding: 10px 12px;
   }
 
   .settings-title {
-    font-size: 16px;
+    font-size: 14px;
   }
 
   .settings-close {
-    width: 30px;
-    height: 30px;
-    font-size: 16px;
+    width: 24px;
+    height: 24px;
+    font-size: 14px;
   }
 
   .settings-content {
-    padding: 14px;
-    gap: 18px;
+    padding: 10px 12px;
+    gap: 12px;
   }
 
   .setting-label {
-    font-size: 13px;
+    font-size: 12px;
   }
 
   .setting-textarea {
-    min-height: 80px;
-    max-height: 120px;
+    min-height: 60px;
+    max-height: 100px;
+    font-size: 12px;
   }
 
   .language-grid {
@@ -1650,13 +1711,13 @@ body {
   .setting-input {
     width: 100%;
     padding: 6px 8px;
-    font-size: 12px;
+    font-size: 11px;
   }
 
   .setting-btn {
     width: 100%;
     padding: 6px 8px;
-    font-size: 12px;
+    font-size: 11px;
   }
 }
 
@@ -1738,66 +1799,52 @@ body {
   cursor: not-allowed;
 }
 
-.uploaded-files {
+.uploaded-files-dropdown-container {
+  display: flex;
+  gap: 8px;
+  align-items: center;
   margin-bottom: 10px;
-  padding: 10px;
+  padding: 8px;
   background-color: var(--sidebar-bg);
   border-radius: 4px;
   border: 1px solid var(--border-color);
 }
 
-.uploaded-files-label {
-  font-weight: 600;
-  font-size: 12px;
-  margin-bottom: 8px;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-.uploaded-files-list {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.uploaded-file-item {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 8px;
-  background-color: var(--dark-bg);
-  border-radius: 3px;
-  font-size: 12px;
-  gap: 8px;
-}
-
-.file-icon {
-  flex-shrink: 0;
-  font-size: 14px;
-}
-
-.file-name {
+.uploaded-files-dropdown {
   flex: 1;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  word-break: break-all;
+  padding: 8px 10px;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  background-color: var(--dark-bg);
+  color: var(--text-color);
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s;
 }
 
-.file-remove {
-  flex-shrink: 0;
-  width: 20px;
-  height: 20px;
-  border: none;
-  border-radius: 2px;
+.uploaded-files-dropdown:hover {
+  border-color: var(--accent-color);
+}
+
+.uploaded-files-dropdown:focus {
+  outline: none;
+  border-color: var(--accent-color);
+  box-shadow: 0 0 0 2px rgba(var(--accent-color-rgb), 0.2);
+}
+
+.file-remove-btn {
+  padding: 6px 10px;
+  border: 1px solid #ff6b6b;
+  border-radius: 4px;
   background-color: transparent;
   color: #ff6b6b;
   cursor: pointer;
   font-size: 14px;
   transition: all 0.2s;
+  flex-shrink: 0;
 }
 
-.file-remove:hover {
+.file-remove-btn:hover {
   background-color: #ff6b6b;
   color: white;
 }

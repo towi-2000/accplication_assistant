@@ -463,3 +463,138 @@ export type FileUploadResponse = {
   message?: string
   error?: string
 }
+
+// ===== DATABASE FILTER TYPES =====
+
+/**
+ * Parameter für DB-Filter-Vorschau
+ * Zeigt welche Einträge gelöscht würden
+ */
+export type DbFilterPreviewParams = {
+  include: string      // Include-Keywords (newline/comma separated)
+  exclude: string      // Exclude-Keywords (newline/comma separated)
+  chatId: string       // Chat-ID für DB-Isolation
+}
+
+/**
+ * Vorschau-Item davon was gelöscht würde
+ */
+export type DbFilterPreviewItem = {
+  id: number
+  url: string
+  title: string
+  snippet: string      // First 100 chars of content
+}
+
+/**
+ * DB-Filter Preview Response
+ */
+export type DbFilterPreviewResponse = {
+  items: DbFilterPreviewItem[]
+  total: number
+}
+
+/**
+ * Parameter für DB-Filter Delete
+ * Löscht nicht-matching Einträge
+ */
+export type DbFilterDeleteParams = {
+  include: string      // Keywords die bleiben sollen
+  exclude: string      // Keywords die gelöscht werden sollen
+  chatId: string
+}
+
+/**
+ * DB-Filter Delete Response
+ */
+export type DbFilterDeleteResponse = {
+  success: boolean
+  deleted: number
+}
+
+// ===== BATCH APPLICATION TYPES =====
+
+/**
+ * Template-Datei für Bewerbungserstellung
+ * Hochgeladene Dateien die als Vorlage dienen
+ */
+export type TemplateFile = {
+  id: string
+  name: string
+  size?: number
+  uploadedAt?: string
+  mime?: string
+}
+
+/**
+ * Generierte Bewerbung für einen DB-Eintrag
+ * Output der Batch-Application-Generation
+ */
+export type GeneratedApplication = {
+  pageId: number
+  pageUrl: string
+  pageTitle: string
+  applicationText: string
+  generatedAt: string
+  template?: string     // Welche Template verwendet
+}
+
+/**
+ * Parameter für Batch-Application Generation
+ */
+export type BatchApplicationParams = {
+  selectedTemplateId?: string  // Template-ID falls verwendet
+  chatId: string
+  systemPrompt?: string        // Custom System-Prompt
+  temperature?: number
+}
+
+/**
+ * Response der Batch-Application Generation
+ * Array von generierten Bewerbungen
+ */
+export type BatchApplicationResponse = GeneratedApplication[]
+
+// ===== FILE CONTENT TYPES =====
+
+/**
+ * Datei mit Content
+ * Wird beim Fetch der Datei-Details zurückbekommen
+ */
+export type FileWithContent = TemplateFile & {
+  content: string              // Base64-encoded content
+}
+
+/**
+ * File-Upload Payload für Server
+ */
+export type FileUploadPayload = {
+  fileName: string
+  fileContent: string          // Base64
+  fileType?: string            // MIME-Type
+  fileSize?: number
+  chatId: string
+}
+
+// ===== CONSOLIDATED API RESPONSE TYPES =====
+
+/**
+ * Standardisierte API-Response für alle Operationen
+ * Einheitliches Fehlerhandling und Daten-Format
+ */
+export type ApiResponse<T> = {
+  success: boolean
+  data?: T
+  error?: string
+  message?: string
+}
+
+/**
+ * Paginated Response für List-Operationen
+ */
+export type PaginatedResponse<T> = {
+  items: T[]
+  total: number
+  limit: number
+  offset: number
+}

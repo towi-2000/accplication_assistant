@@ -490,6 +490,9 @@ ${uploadedFiles.length > 0 ? `${t('uploadedFilesSystem')}: ${uploadedFiles.map(f
    */
   const handleInputChange = (e: ChangeEvent<HTMLTextAreaElement>): void => {
     setInput(e.target.value)
+    // Auto-adjust textarea height
+    e.target.style.height = 'auto'
+    e.target.style.height = Math.min(e.target.scrollHeight, 300) + 'px'
   }
 
   /**
@@ -1700,7 +1703,7 @@ ${chatSettings.systemPrompt}`
                 {t('closeModal')}
               </button>
               <a
-                href="https://github.com/yourusername/repo"
+                href="/README.md"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="modal-btn modal-btn-secondary"
@@ -1716,4 +1719,3 @@ ${chatSettings.systemPrompt}`
 }
 
 export default App
-

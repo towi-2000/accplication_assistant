@@ -660,9 +660,15 @@ app.get('/docs/:filename', (req, res) => {
   })
 })
 
-app.listen(port, () => {
-  console.log(`API server running on http://localhost:${port}`)
-})
+// Export the app for use in both standalone and middleware mode
+export default app
+
+// If running standalone, start the server
+if (import.meta.url === `file://${process.argv[1]}`) {
+  app.listen(port, () => {
+    console.log(`API server running on http://localhost:${port}`)
+  })
+}
 
 // ===== AI SERVICE ENDPOINTS =====
 
