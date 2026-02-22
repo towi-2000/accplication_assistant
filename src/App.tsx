@@ -99,6 +99,7 @@ function App(): React.ReactElement {
   const [saveProgress, setSaveProgress] = useState<{ current: number; total: number }>({ current: 0, total: 0 })
 
   const searchFieldIdRef = useRef<number>(1)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   // ========== UI STATE ==========
   // sidebarOpen: Sidebar ist auf mobilen Geräten ausblenbar (hamburger menu)
@@ -344,12 +345,14 @@ function App(): React.ReactElement {
           })
         })
 
+        const payload = await parseJsonResponse(response)
         if (!response.ok) {
-          const errorPayload = await response.json()
-          throw new Error(errorPayload.error || t('errorFileUpload'))
+          throw new Error(payload?.error || t('errorFileUpload'))
         }
 
-        const payload = await response.json()
+        if (!payload) {
+          throw new Error(t('errorFileUpload'))
+        }
         newFiles.push({
           id: payload.fileId,
           name: payload.fileName,
@@ -362,7 +365,9 @@ function App(): React.ReactElement {
       setTemplateFiles(refreshed.files)
 
       // Reset input
-      e.currentTarget.value = ''
+      if (fileInputRef.current) {
+        fileInputRef.current.value = ''
+      }
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : t('errorFileUpload')
       setFileUploadError(errorMsg)
@@ -621,6 +626,18 @@ ${uploadedFiles.length > 0 ? `${t('uploadedFilesSystem')}: ${uploadedFiles.map(f
       return new TextDecoder('utf-8').decode(bytes)
     } catch (error) {
       return ''
+    }
+  }
+
+  const parseJsonResponse = async (response: Response): Promise<any> => {
+    const text = await response.text()
+    if (!text) {
+      return null
+    }
+    try {
+      return JSON.parse(text)
+    } catch (error) {
+      return null
     }
   }
 
@@ -1050,30 +1067,41 @@ ${chatSettings.systemPrompt}`
 
           {/* ===== INPUT AREA ===== */}
           <div className="input-area">
-            {/* Datei-Upload-Bereich */}
+            {/* Datei-Upload-Dropdown */}
             {uploadedFiles.length > 0 && (
-              <div className="uploaded-files">
-                <div className="uploaded-files-label">📎 {t('uploadedFilesLabel')} ({uploadedFiles.length}):</div>
-                <div className="uploaded-files-list">
+              <div className="uploaded-files-dropdown-container">
+                <select
+                  className="uploaded-files-dropdown"
+                  value={selectedTemplateId}
+                  onChange={(e) => setSelectedTemplateId(e.target.value)}
+                  aria-label={t('uploadedFilesLabel')}
+                >
+                  <option value="">📎 {t('uploadedFilesLabel')} ({uploadedFiles.length})</option>
                   {uploadedFiles.map((file) => (
-                    <div key={file.id} className="uploaded-file-item">
-                      <span className="file-icon">📄</span>
-                      <span className="file-name">{file.name}</span>
-                      <button
-                        className="file-remove"
-                        onClick={() => setUploadedFiles(prev => prev.filter(f => f.id !== file.id))}
-                        aria-label={t('deleteFileAria')}
-                      >
-                        ✕
-                      </button>
-                    </div>
+                    <option key={file.id} value={file.id}>
+                      📄 {file.name}
+                    </option>
                   ))}
-                </div>
+                </select>
+                {selectedTemplateId && (
+                  <button
+                    className="file-remove-btn"
+                    onClick={() => {
+                      setUploadedFiles(prev => prev.filter(f => f.id !== selectedTemplateId))
+                      setSelectedTemplateId('')
+                    }}
+                    aria-label={t('deleteFileAria')}
+                    title={t('deleteFileAria')}
+                  >
+                    ✕
+                  </button>
+                )}
               </div>
             )}
 
             {/* File Upload Input (versteckt) + Button */}
             <input
+              ref={fileInputRef}
               type="file"
               id="file-upload"
               multiple
