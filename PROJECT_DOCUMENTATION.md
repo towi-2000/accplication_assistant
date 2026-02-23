@@ -1,115 +1,115 @@
-# 🤖 AI Assistant & Webseiten-Recherche - Projektdokumentation
+# 🤖 AI Assistant & Website Research - Project Documentation
 
-## 📋 Überblick
+## 📋 Overview
 
-Dies ist eine **moderne, vollständig responsive webbasierte Chat- und Recherche-Anwendung** mit SQLite-Datenbank-Integration, Express-Backend und Web-Crawler. 
+This is a **modern, fully responsive web-based chat and research application** with SQLite database integration, Express backend and web crawler.
 
-### Kernfeatures
-- 💬 **3-Spalten-Layout**: Chat | URL-Eingabe | Ergebnisse (responsive)
-- 🌐 **Web-Crawler**: Speichere bis zu 1000 Webseiten parallel mit 8x Parallelisierung
-- 💾 **SQLite-Datenbank**: Pro-Chat isolierte DBs für Webseiten-Inhalte
-- 🔍 **Volltextsuche**: LIKE-Queries auf URL, Titel, Inhalt
-- 📊 **Fortschritts-Tracking**: Live % Anzeige beim Crawlen und Speichern
-- 🌍 **5 Sprachen**: Deutsch, Englisch, Französisch, Spanisch, Italienisch
-- 🎨 **5 Design-Themes**: Hell, Dunkel, Ozean, Wald, Sonnenuntergang
-- 📱 **Vollständig Responsive**: Desktop bis 380px Mobile
-- 🔒 **100% TypeScript**: Komplette Typsicherheit
-- ♿ **Accessible**: ARIA-Labels, Keyboard-Navigation
+### Core Features
+- 💬 **3-Column Layout**: Chat | URL input | Results (responsive)
+- 🌐 **Web crawler**: Save up to 1000 web pages in parallel with 8x parallelization
+- 💾 **SQLite database**: Per-chat isolated DBs for website content
+- 🔍 **Full-text search**: LIKE queries on URL, title, content
+- 📊 **Progress tracking**: Live % display during crawling and saving
+- 🌍 **5 Languages**: German, English, French, Spanish, Italian
+- 🎨 **5 Design themes**: Light, dark, ocean, forest, sunset
+- 📱 **Fully responsive**: Desktop to 380px mobile
+- 🔒 **100% TypeScript**: Complete type safety
+- ♿ **Accessible**: ARIA labels, keyboard navigation
 
 ---
 
-## 🏗️ Projektstruktur - Detailliert
+## 🏗️ Project Structure - Detailed
 
 ```
 accplication_assistant/
 ├── src/                               # Frontend (React + TypeScript)
-│   ├── App.tsx                        # Hauptkomponente (925 Zeilen)
-│   │   ├── State Management (Messages, Conversations, Settings)
-│   │   ├── Event Handler (50+ Handler-Funktionen)
-│   │   ├── 3-Spalten-Layout Rendering
-│   │   ├── Settings Panels (Chat & Global)
-│   │   └── Sidebar & Navigation
+│   ├── App.tsx                        # Main component (925 lines)
+│   │   ├── State management (messages, conversations, settings)
+│   │   ├── Event handlers (50+ handler functions)
+│   │   ├── 3-column layout rendering
+│   │   ├── Settings panels (chat & global)
+│   │   └── Sidebar & navigation
 │   │
-│   ├── Functions.tsx                  # Business-Logik (350+ Zeilen)
-│   │   ├── Translations & Theme System
-│   │   ├── URL Parsing & Validation
-│   │   ├── API Integration (Crawl, Search, Preview, Save)
-│   │   ├── Progress Utilities
-│   │   ├── Filter & Search Helpers
-│   │   └── Conversation Management
+│   ├── Functions.tsx                  # Business logic (350+ lines)
+│   │   ├── Translations & theme system
+│   │   ├── URL parsing & validation
+│   │   ├── API integration (crawl, search, preview, save)
+│   │   ├── Progress utilities
+│   │   ├── Filter & search helpers
+│   │   └── Conversation management
 │   │
-│   ├── type.tsx                       # TypeScript Typen (260+ Zeilen)
-│   │   ├── Message & Conversation Types
-│   │   ├── Settings Types
-│   │   ├── Theme & Translation Types
-│   │   ├── Web Database Types
-│   │   ├── API Response Types
-│   │   ├── Progress & State Types
-│   │   └── Validation Types
+│   ├── type.tsx                       # TypeScript types (260+ lines)
+│   │   ├── Message & conversation types
+│   │   ├── Settings types
+│   │   ├── Theme & translation types
+│   │   ├── Web database types
+│   │   ├── API response types
+│   │   ├── Progress & state types
+│   │   └── Validation types
 │   │
-│   ├── App.css                        # Responsive Styles (1600+ Zeilen)
-│   │   ├── CSS Variables für Theming
-│   │   ├── 3-Spalten Grid Layout
-│   │   ├── Responsive Breakpoints (1024px, 768px, 480px, 380px)
-│   │   ├── Dark Mode Support
-│   │   ├── Component Styles
-│   │   ├── Progress Bar Animation
-│   │   └── Mobile Hamburger Menu
+│   ├── App.css                        # Responsive styles (1600+ lines)
+│   │   ├── CSS variables for theming
+│   │   ├── 3-column grid layout
+│   │   ├── Responsive breakpoints (1024px, 768px, 480px, 380px)
+│   │   ├── Dark mode support
+│   │   ├── Component styles
+│   │   ├── Progress bar animation
+│   │   └── Mobile hamburger menu
 │   │
-│   ├── index.css                      # Global Styles
-│   ├── main.jsx                       # React Entry Point
-│   ├── data.json                      # Translations & Themes (200+ Zeilen)
-│   └── index.html                     # HTML Shell
+│   ├── index.css                      # Global styles
+│   ├── main.jsx                       # React entry point
+│   ├── data.json                      # Translations & themes (200+ lines)
+│   └── index.html                     # HTML shell
 │
 ├── server/                            # Backend (Express + SQLite)
-│   ├── index.js                       # Express API Server (400+ Zeilen)
-│   │   ├── CORS & Middleware Setup
+│   ├── index.js                       # Express API server (400+ lines)
+│   │   ├── CORS & middleware setup
 │   │   ├── POST /api/crawl (crawl & save up to 1000 URLs)
 │   │   ├── POST /api/preview (preview without saving)
 │   │   ├── GET /api/pages/search (full-text search)
 │   │   ├── POST /api/pages (manual save)
 │   │   ├── runWithConcurrency() - 8x worker pool
-│   │   ├── HTML Parsing (title, text extraction)
-│   │   └── Error Handling
+│   │   ├── HTML parsing (title, text extraction)
+│   │   └── Error handling
 │   │
-│   ├── db.js                          # SQLite Connection Manager (180+ Zeilen)
+│   ├── db.js                          # SQLite connection manager (180+ lines)
 │   │   ├── getDb(chatId) - per-chat isolation
-│   │   ├── openDatabase() - Promise wrapper
+│   │   ├── openDatabase() - promise wrapper
 │   │   ├── initSchema() - DDL execution
 │   │   ├── ensureColumns() - schema migration
 │   │   └── Per-chat cache management
 │   │
-│   ├── schema.sql                     # DB Schema (50+ Zeilen)
-│   │   └── CREATE TABLE pages (11 Felder)
+│   ├── schema.sql                     # DB schema (50+ lines)
+│   │   └── CREATE TABLE pages (11 fields)
 │   │
-│   └── data/                          # Per-Chat Databases
+│   └── data/                          # Per-chat databases
 │       ├── chat-1.db                  # Chat 1 SQLite file
 │       ├── chat-2.db                  # Chat 2 SQLite file
 │       └── chat-{id}.db               # ...
 │
-├── package.json                       # Dependencies & Scripts
-├── vite.config.js                     # Vite Bundler Config
-├── eslint.config.js                   # ESLint Configuration
-├── README.md                          # API & Feature Overview
-└── PROJECT_DOCUMENTATION.md           # Diese Datei (600+ Zeilen)
+├── package.json                       # Dependencies & scripts
+├── vite.config.js                     # Vite bundler config
+├── eslint.config.js                   # ESLint configuration
+├── README.md                          # API & feature overview
+└── PROJECT_DOCUMENTATION.md           # This file (600+ lines)
 ```
 
 ---
 
-## 📄 Dateien im Detail
+## 📄 Files in Detail
 
-### **src/App.tsx** (925 Zeilen)
-**Die Hauptkomponente** - Verwaltet alle UI, State und Interaktionen.
+### **src/App.tsx** (925 lines)
+**The main component** - Manages all UI, state and interactions.
 
-**State Management (70+ Zeilen):**
+**State Management (70+ lines):**
 ```typescript
-// Message State
+// Message state
 const [messages, setMessages] = useState<Message[]>([])
 const [input, setInput] = useState<string>('')
 const [conversations, setConversations] = useState<Conversation[]>([])
 const [activeConversationId, setActiveConversationId] = useState<number>(1)
 
-// Web Database State (10+ states für Crawling, Search, Preview)
+// Web database state (10+ states for crawling, search, preview)
 const [urlInput, setUrlInput] = useState<string>('')
 const [crawlResults, setCrawlResults] = useState<CrawlResultItem[]>([])
 const [searchQuery, setSearchQuery] = useState<string>('')
@@ -117,7 +117,7 @@ const [searchResults, setSearchResults] = useState<WebPageRecord[]>([])
 const [previewResults, setPreviewResults] = useState<WebPreviewItem[]>([])
 const [saveProgress, setSaveProgress] = useState({ current: 0, total: 0 })
 
-// Settings State
+// Settings state
 const [globalSettings, setGlobalSettings] = useState<GlobalSettings>({
   language: 'de',
   theme: 'dark',
@@ -130,48 +130,48 @@ const [chatSettings, setChatSettings] = useState<ChatSettings>({
   systemPrompt: '...'
 })
 
-// UI State
+// UI state
 const [sidebarOpen, setSidebarOpen] = useState(false)
 const [settingsPanelOpen, setSettingsPanelOpen] = useState(false)
 const [globalSettingsOpen, setGlobalSettingsOpen] = useState(false)
 ```
 
-**Event Handler (50+ Funktionen):**
-- `handleSendMessage()` - Chat-Nachricht senden
-- `handleKeyPress()` - Enter/Shift+Enter Tastenkombination
-- `handleInputChange()` - Input-Feld ändern
-- `handleTemperatureChange()` - Temperature Slider
-- `handleModelChange()` - Model Selection
-- `handleThemeChange()` - Theme wechseln
-- `handleLanguageChange()` - Sprache wechseln
-- `handleCrawl()` - URLs crawlen und speichern
-- `handleSearch()` - In Datenbank suchen
-- `handleTogglePreview()` - Checkboxes für Web-Vorschau
-- `handleSaveSelected()` - Ausgewählte URLs speichern
-- `handleNewChat()` - Neue Konversation
-- `handleDeleteConversation()` - Chat löschen
-- ...15+ weitere Handler
+**Event Handlers (50+ functions):**
+- `handleSendMessage()` - Send chat message
+- `handleKeyPress()` - Enter/Shift+Enter keyboard combination
+- `handleInputChange()` - Input field change
+- `handleTemperatureChange()` - Temperature slider
+- `handleModelChange()` - Model selection
+- `handleThemeChange()` - Switch theme
+- `handleLanguageChange()` - Switch language
+- `handleCrawl()` - Crawl and save URLs
+- `handleSearch()` - Search in database
+- `handleTogglePreview()` - Checkboxes for web preview
+- `handleSaveSelected()` - Save selected URLs
+- `handleNewChat()` - New conversation
+- `handleDeleteConversation()` - Delete chat
+- ...15+ additional handlers
 
-**UI-Rendering (500+ Zeilen):**
-- Sidebar mit Konversationen
-- Header mit Einstellungen
-- 3-Spalten Main-Layout
-  - Spalte 1: Messages Area + Input
-  - Spalte 2: URL-Input + Search
-  - Spalte 3: DB Results + Web Preview
-- Settings Panels (Chat & Global)
+**UI Rendering (500+ lines):**
+- Sidebar with conversations
+- Header with settings
+- 3-column main layout
+  - Column 1: Messages area + Input
+  - Column 2: URL input + Search
+  - Column 3: DB results + Web preview
+- Settings panels (chat & global)
 
-### **src/Functions.tsx** (350+ Zeilen)
-**Business-Logik Utilities** - Alle nicht-UI-Funktionen.
+### **src/Functions.tsx** (350+ lines)
+**Business logic utilities** - All non-UI functions.
 
-**Translation & Theme (60 Zeilen):**
+**Translation & Theme (60 lines):**
 ```typescript
 export const getTranslation(key: string, language: string): string
 export const getTheme(themeName: string): Theme
 export const applyThemeToDocument(themeName: string): void
 ```
 
-**API Integration (100 Zeilen):**
+**API Integration (100 lines):**
 ```typescript
 export const crawlUrls(urls: string[], chatId: number): Promise<CrawlResponse>
 export const previewUrls(urls: string[], query: string): Promise<PreviewResponse>
@@ -179,7 +179,7 @@ export const searchPages(query: string, chatId: number): Promise<PageSearchRespo
 export const savePage(url: string, content: string, chatId: number): Promise<WebPageRecord>
 ```
 
-**URL & Validation (80 Zeilen):**
+**URL & Validation (80 lines):**
 ```typescript
 export const parseUrlList(input: string): string[]
 export const limitUrls(urls: string[], max = 1000): string[]
@@ -187,7 +187,7 @@ export const validateUrlList(urls: string[]): { valid: boolean; error?: string }
 export const validateSearchQuery(query: string): { valid: boolean; error?: string }
 ```
 
-**Progress & Helpers (60 Zeilen):**
+**Progress & Helpers (60 lines):**
 ```typescript
 export const calculateProgress(current: number, total: number): number
 export const getProgressLabel(...args): string
@@ -196,7 +196,7 @@ export const filterWebResults(items: WebPageRecord[], query: string): WebPageRec
 export const buildSelectionMap(items: WebPreviewItem[]): Record<string, boolean>
 ```
 
-**Data Transformation (50 Zeilen):**
+**Data Transformation (50 lines):**
 ```typescript
 export const getNextConversationId(conversations: Conversation[]): number
 export const filterConversations(conversations: Conversation[], query: string)
@@ -204,10 +204,10 @@ export const updateConversationTitle(conversations, id, title)
 export const isMessageValid(input: string): boolean
 ```
 
-### **src/type.tsx** (260+ Zeilen)
-**TypeScript Type-Definitionen** - Komplette Typsicherheit.
+### **src/type.tsx** (260+ lines)
+**TypeScript type definitions** - Complete type safety.
 
-**Message & Chat Types (30 Zeilen):**
+**Message & Chat Types (30 lines):**
 ```typescript
 export type Message = {
   id: number
@@ -221,7 +221,7 @@ export type Conversation = {
 }
 ```
 
-**Settings Types (40 Zeilen):**
+**Settings Types (40 lines):**
 ```typescript
 export type GlobalSettings = {
   language: string
@@ -237,7 +237,7 @@ export type ChatSettings = {
 }
 ```
 
-**Theme Types (40 Zeilen):**
+**Theme Types (40 lines):**
 ```typescript
 export type Theme = {
   name: string
@@ -252,7 +252,7 @@ export type Theme = {
 }
 ```
 
-**Web Database Types (60 Zeilen):**
+**Web Database Types (60 lines):**
 ```typescript
 export type WebPageRecord = {
   id: number
@@ -282,7 +282,7 @@ export type WebPreviewItem = {
 }
 ```
 
-**Neue Types (50 Zeilen):**
+**New Types (50 lines):**
 ```typescript
 export type ProgressState = { current: number; total: number }
 export type DatabaseQueryState = { searchQuery: string; filterQuery: string; selectedUrls: Record<string, boolean> }
@@ -290,17 +290,17 @@ export type ApiConfig = { baseUrl: string; endpoints: { ... } }
 export type OperationResult<T> = { success: boolean; data?: T; error?: string }
 ```
 
-**API Response Types (30 Zeilen):**
+**API Response Types (30 lines):**
 ```typescript
 export type PageSearchResponse = { items: WebPageRecord[], limit: number, offset: number }
 export type CrawlResponse = { items: CrawlResultItem[] }
 export type PreviewResponse = { items: WebPreviewItem[] }
 ```
 
-### **src/App.css** (1600+ Zeilen)
-**Responsive 3-Spalten-Layout & Styles.**
+### **src/App.css** (1600+ lines)
+**Responsive 3-column layout & styles.**
 
-**CSS Variables (50 Zeilen):**
+**CSS Variables (50 lines):**
 ```css
 :root {
   --primary-color: #10a37f;
@@ -323,7 +323,7 @@ export type PreviewResponse = { items: WebPreviewItem[] }
 }
 ```
 
-**3-Spalten-Grid (100 Zeilen):**
+**3-Column Grid (100 lines):**
 ```css
 .chat-container {
   display: grid;
@@ -351,28 +351,28 @@ export type PreviewResponse = { items: WebPreviewItem[] }
 ```
 
 **Responsive Breakpoints:**
-- **1024px**: 2 Spalten (rechts unten)
-- **768px**: 1 Spalte (vertikal)
-- **480px**: Mobile optimiert
+- **1024px**: 2 columns (right below)
+- **768px**: 1 column (vertical)
+- **480px**: Mobile optimized
 - **380px**: Ultra-compact
 
-**Komponenten-Styles (400+ Zeilen):**
-- Sidebar, Messages, Input
-- Settings Panels (floating)
-- Progress Bar mit Animation
-- Web Database Results mit Numbering
-- Zebra-striped Rows
+**Component Styles (400+ lines):**
+- Sidebar, messages, input
+- Settings panels (floating)
+- Progress bar with animation
+- Web database results with numbering
+- Zebra-striped rows
 
-**Animations (50 Zeilen):**
-- Progress-Bar animiert (indeterminate)
-- Button Hover-Effects
-- Theme Transitions
-- Mobile Slideout
+**Animations (50 lines):**
+- Progress bar animation (indeterminate)
+- Button hover effects
+- Theme transitions
+- Mobile slideout
 
-### **server/index.js** (400+ Zeilen)
-**Express API Server** - Backend für Crawling & Search.
+### **server/index.js** (400+ lines)
+**Express API Server** - Backend for crawling & search.
 
-**Setup & Middleware (30 Zeilen):**
+**Setup & Middleware (30 lines):**
 ```javascript
 const express = require('express')
 const cors = require('cors')
@@ -385,21 +385,21 @@ app.use(express.json())
 
 **Endpoints:**
 
-1. **POST /api/crawl** (100 Zeilen)
+1. **POST /api/crawl** (100 lines)
    ```javascript
    body: { urls: string[], chatId: number }
    response: { items: CrawlResultItem[] }
    
    - Parse URLs
    - Validate format & count
-   - Fetch parallel (8x max)
+   - Fetch in parallel (8x max)
    - Extract title & content
    - Hash detection
    - Upsert in DB
    - Return status
    ```
 
-2. **POST /api/preview** (60 Zeilen)
+2. **POST /api/preview** (60 lines)
    ```javascript
    body: { urls: string[], query: string }
    response: { items: WebPreviewItem[] }
@@ -409,7 +409,7 @@ app.use(express.json())
    - Filter by query
    ```
 
-3. **GET /api/pages/search** (40 Zeilen)
+3. **GET /api/pages/search** (40 lines)
    ```javascript
    query: { q: string, chatId: number, limit: number, offset: number }
    response: { items: WebPageRecord[] }
@@ -419,7 +419,7 @@ app.use(express.json())
    - Pagination
    ```
 
-4. **POST /api/pages** (30 Zeilen)
+4. **POST /api/pages** (30 lines)
    ```javascript
    body: { url: string, content: string, chatId: number, title?: string }
    response: { id: number, contentHash: string }
@@ -428,7 +428,7 @@ app.use(express.json())
    - Upsert logic
    ```
 
-**Parallel Fetching (80 Zeilen):**
+**Parallel Fetching (80 lines):**
 ```javascript
 const runWithConcurrency = async (items, limit, iterator) => {
   // 8x worker pool
@@ -441,11 +441,11 @@ const FETCH_CONCURRENCY = 8
 const MAX_URLS = 1000
 ```
 
-**HTML Parsing (60 Zeilen):**
+**HTML Parsing (60 lines):**
 ```javascript
 const extractTitle = (html) => {
-  // Regex oder HTML parser
-  // Fallback zu URL
+  // Regex or HTML parser
+  // Fallback to URL
 }
 
 const extractText = (html) => {
@@ -455,10 +455,10 @@ const extractText = (html) => {
 }
 ```
 
-### **server/db.js** (180+ Zeilen)
-**SQLite Connection Manager** - Per-Chat Isolation.
+### **server/db.js** (180+ lines)
+**SQLite connection manager** - Per-chat isolation.
 
-**Per-Chat Database Factory (50 Zeilen):**
+**Per-Chat Database Factory (50 lines):**
 ```javascript
 const dbCache = new Map()
 
@@ -470,7 +470,7 @@ const getDb = (chatId) => {
 }
 ```
 
-**Promise Wrapper (40 Zeilen):**
+**Promise Wrapper (40 lines):**
 ```javascript
 const openDatabase = (dbPath) => {
   return new Promise((resolve, reject) => {
@@ -482,7 +482,7 @@ const openDatabase = (dbPath) => {
 }
 ```
 
-**Schema Initialization (50 Zeilen):**
+**Schema Initialization (50 lines):**
 ```javascript
 const initSchema = async (db) => {
   // Read schema.sql
@@ -492,14 +492,14 @@ const initSchema = async (db) => {
 }
 ```
 
-**Utility Functions (40 Zeilen):**
+**Utility Functions (40 lines):**
 ```javascript
 const run = (db, sql, params) => Promise
 const get = (db, sql, params) => Promise
 const all = (db, sql, params) => Promise
 ```
 
-### **server/schema.sql** (50 Zeilen)
+### **server/schema.sql** (50 lines)
 ```sql
 CREATE TABLE IF NOT EXISTS pages (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -518,10 +518,10 @@ CREATE INDEX IF NOT EXISTS idx_title ON pages(title)
 CREATE INDEX IF NOT EXISTS idx_hash ON pages(content_hash)
 ```
 
-### **src/data.json** (200+ Zeilen)
-**Externalisierte Konfiguration** - Sprachen & Themes.
+### **src/data.json** (200+ lines)
+**Externalized configuration** - Languages & themes.
 
-**Translations (150 Zeilen):**
+**Translations (150 lines):**
 ```json
 {
   "translations": {
@@ -534,12 +534,12 @@ CREATE INDEX IF NOT EXISTS idx_hash ON pages(content_hash)
 }
 ```
 
-**Themes (50 Zeilen):**
+**Themes (50 lines):**
 ```json
 {
   "themes": {
-    "light": { "name": "Hell", "primaryColor": "#10a37f", ... },
-    "dark": { "name": "Dunkel", "primaryColor": "#10a37f", ... },
+    "light": { "name": "Light", "primaryColor": "#10a37f", ... },
+    "dark": { "name": "Dark", "primaryColor": "#10a37f", ... },
     "ocean": { ... },
     "forest": { ... },
     "sunset": { ... }
@@ -549,25 +549,25 @@ CREATE INDEX IF NOT EXISTS idx_hash ON pages(content_hash)
 
 ---
 
-## 🎨 UI-Layout: 3-Spalten-Design
+## 🎨 UI Layout: 3-Column Design
 
 ### Desktop (> 1024px)
 ```
 ┌──────────────────────────────────────────────────────────────┐
-│                    HEADER (Full Width)                       │
+│                    HEADER (Full width)                       │
 ├─────────────────┬──────────────────┬─────────────────────────┤
 │                 │                  │                         │
-│   SPALTE 1      │   SPALTE 2       │     SPALTE 3            │
-│   (Chat)        │   (Suche)        │   (Ergebnisse)          │
+│   COLUMN 1      │   COLUMN 2       │     COLUMN 3            │
+│   (Chat)        │   (Search)       │   (Results)             │
 │                 │                  │                         │
-│ - Messages      │ - URL-Input      │ - Progress Bar          │
-│ - Scrollable    │ - Crawl Button   │ - DB Results            │
-│ - Input Field   │ - URLs Crawled   │   (numbered list)       │
-│ - Send Button   │ - Divider        │ - Filter Input          │
-│ - Input Hint    │ - Search Input   │ - Web Results           │
-│                 │ - Search Button  │ (with checkboxes)       │
-│                 │ - Search Error   │ - Save Button           │
-│                 │                  │ - Progress Counter      │
+│ - Messages      │ - URL input      │ - Progress bar          │
+│ - Scrollable    │ - Crawl button   │ - DB results            │
+│ - Input field   │ - URLs crawled   │   (numbered list)       │
+│ - Send button   │ - Divider        │ - Filter input          │
+│ - Input hint    │ - Search input   │ - Web results           │
+│                 │ - Search button  │ (with checkboxes)       │
+│                 │ - Search error   │ - Save button           │
+│                 │                  │ - Progress counter      │
 │                 │                  │                         │
 └─────────────────┴──────────────────┴─────────────────────────┘
 ```
@@ -577,12 +577,12 @@ CREATE INDEX IF NOT EXISTS idx_hash ON pages(content_hash)
 ┌──────────────────────────────────────────────────────────────┐
 │                    HEADER                                    │
 ├─────────────────────────────┬────────────────────────────────┤
-│   SPALTE 1 + SPALTE 2       │   SPALTE 3 (voll Höhe)        │
-│   (Chat + URL nebeneinander)│   (Ergebnisse scrollbar)      │
+│   COLUMN 1 + COLUMN 2       │   COLUMN 3 (full height)      │
+│   (Chat + URL side by side) │   (Results scrollable)        │
 │                             │                                │
-│ Left: Messages              │  - DB Results                 │
-│ Right: URL-Input & Search   │  - Web Results                │
-│                             │  - Filter & Save              │
+│ Left: Messages              │  - DB results
+│ Right: URL input & search   │  - Web results                │
+│                             │  - Filter & save              │
 └─────────────────────────────┴────────────────────────────────┘
 ```
 
@@ -591,17 +591,17 @@ CREATE INDEX IF NOT EXISTS idx_hash ON pages(content_hash)
 ┌───────────────────────────────┐
 │   HEADER                      │
 ├───────────────────────────────┤
-│   SPALTE 1 (vollbreit)        │
+│   COLUMN 1 (full width)       │
 │   - Messages                  │
 │   - Input                     │
 │   (scrollable)                │
 ├───────────────────────────────┤
-│   SPALTE 2 (vollbreit)        │
-│   - URL-Input                 │
+│   COLUMN 2 (full width)       │
+│   - URL input                 │
 │   - Search                    │
 │   (scrollable)                │
 ├───────────────────────────────┤
-│   SPALTE 3 (vollbreit)        │
+│   COLUMN 3 (full width)       │
 │   - Results                   │
 │   (scrollable)                │
 └───────────────────────────────┘
@@ -609,18 +609,18 @@ CREATE INDEX IF NOT EXISTS idx_hash ON pages(content_hash)
 
 ---
 
-## 🔄 Datenfluss & API-Integration
+## 🔄 Data Flow & API Integration
 
-### #1: Web-Crawl Workflow
+### #1: Web Crawl Workflow
 ```
-1. User gibt URLs ein (Spalte 2)
-   └─ textarea mit Validierung
+1. User enters URLs (Column 2)
+   └─ textarea with validation
 
-2. User klickt "Crawl & Speichern"
+2. User clicks "Crawl & Save"
    └─ handleCrawl() in App.tsx
 
-3. Frontend validiert
-   ├─ parseUrlList() → Zeilen splitten
+3. Frontend validates
+   ├─ parseUrlList() → split lines
    ├─ limitUrls() → max 1000
    ├─ validateUrlList() → error messages
    └─ setCrawlBusy(true) → UI feedback
@@ -630,8 +630,8 @@ CREATE INDEX IF NOT EXISTS idx_hash ON pages(content_hash)
    └─ header: Content-Type: application/json
 
 5. Backend crawlUrls()
-   ├─ Fetche alle URLs parallel (8x)
-   ├─ extractTitle(html) → <title> oder fallback
+   ├─ Fetches all URLs in parallel (8x)
+   ├─ extractTitle(html) → <title> or fallback
    ├─ extractText(html) → content cleanup
    ├─ generateHash(content) → duplicate detection
    └─ upsertPage() → INSERT OR UPDATE
@@ -647,30 +647,30 @@ CREATE INDEX IF NOT EXISTS idx_hash ON pages(content_hash)
    }, ...]
    ```
 
-7. Frontend nimmt Antwort
+7. Frontend takes response
    ├─ setCrawlResults(response.items)
-   ├─ Show in Spalte 2
+   ├─ Show in column 2
    ├─ setCrawlBusy(false)
    └─ Optional: auto-search
 ```
 
-### #2: Datenbank-Suche Workflow
+### #2: Database Search Workflow
 ```
-1. User gibt Suchbegriff ein (Spalte 2)
-   └─ search-input
+1. User enters search term (Column 2)
+   └─ search input
 
-2. User klickt "Suche"
+2. User clicks "Search"
    └─ handleSearch() in App.tsx
 
-3. Frontend prüft
+3. Frontend checks
    ├─ validateSearchQuery(searchQuery)
    ├─ setSearchBusy(true)
    └─ resetPreviousResults()
 
 4. GET /api/pages/search?q=...&chatId=...&limit=1000&offset=0
-   ├─ query: Suchbegriff
-   ├─ chatId: für DB-File Isolation
-   └─ limit/offset: für Pagination
+   ├─ query: search term
+   ├─ chatId: for DB file isolation
+   └─ limit/offset: for pagination
 
 5. Backend searchPages()
    ├─ SELECT * FROM pages
@@ -683,8 +683,8 @@ CREATE INDEX IF NOT EXISTS idx_hash ON pages(content_hash)
    [{
      id: 1,
      url: "https://...",
-     title: "Seiten-Titel",
-     content: "Gekürzte Vorschau...",
+     title: "Page title",
+     content: "Shortened preview...",
      status_code: 200,
      content_hash: "abc123...",
      fetched_at: "2026-02-22T10:00:00Z",
@@ -693,53 +693,53 @@ CREATE INDEX IF NOT EXISTS idx_hash ON pages(content_hash)
    }, ...]
    ```
 
-7. Frontend nimmt Ergebnis
+7. Frontend takes result
    ├─ setSearchResults(response.items)
-   ├─ Zeige in Spalte 3 mit Numbering
+   ├─ Show in column 3 with numbering
    ├─ filterWebResults(items, dbQuery) → live filter
    ├─ setDbResultsQuery('') → reset filter
-   └─ FALLBACK: Falls leer, preview web URLs
+   └─ FALLBACK: If empty, preview web URLs
 ```
 
-### #3: Web-Preview + Manual Save
+### #3: Web Preview + Manual Save
 ```
-1. DB-Suche liefert 0 Treffer
+1. DB search returns 0 results
    └─ setPreviewBusy(true)
 
-2. Falls urlInput nicht leer:
+2. If urlInput not empty:
    ├─ parseUrlList(urlInput)
    ├─ limitUrls(1000)
    └─ previewUrls(urls, searchQuery)
 
 3. POST /api/preview
    ├─ body: { urls: string[], query: string }
-   └─ Wie Crawl, aber ohne DB save
+   └─ Like crawl, but without DB save
 
-4. Frontend zeigt Results in Spalte 3
-   ├─ buildSelectionMap(items) → alle unchecked
+4. Frontend shows results in column 3
+   ├─ buildSelectionMap(items) → all unchecked
    ├─ Render checkboxes
    ├─ Sortable, filterable
-   └─ "Alle" / "Keine" buttons
+   └─ "All" / "None" buttons
 
-5. User wählt URLs
+5. User selects URLs
    ├─ handleTogglePreview(url)
    └─ setPreviewSelected({...})
 
-6. User klickt "Speichern"
+6. User clicks "Save"
    ├─ setSaveBusy(true)
    ├─ setShowProgress(true)
-   └─ Für jedes Item: savePage()
+   └─ For each item: savePage()
 
-7. POST /api/pages (für jede URL)
+7. POST /api/pages (for each URL)
    ├─ body: { url, content, title, chatId }
-   └─ Sequential oder batch
+   └─ Sequential or batch
 
-8. Frontend updated Progress
+8. Frontend updates progress
    ├─ setSaveProgress({current: i, total: n})
-   ├─ Zeige in Progress Bar
+   ├─ Show in progress bar
    └─ calculateProgress(i, n) → %
 
-9. Nach Speichern
+9. After saving
    ├─ searchPages() → refresh DB
    ├─ setSearchResults(...)
    ├─ setPreviewResults([]) → clear
@@ -752,20 +752,20 @@ CREATE INDEX IF NOT EXISTS idx_hash ON pages(content_hash)
 
 ### Message State
 ```typescript
-// Konversations-spezifisch
+// Conversation-specific
 const [messages, setMessages] = useState<Message[]>([])
 const [input, setInput] = useState<string>('')
 
-// Globale Konversationen
+// Global conversations
 const [conversations, setConversations] = useState<Conversation[]>([])
 const [activeConversationId, setActiveConversationId] = useState<number>(1)
 const [conversationSearch, setConversationSearch] = useState<string>('')
 
-// Edit Mode
+// Edit mode
 const [editingConversationId, setEditingConversationId] = useState<number | null>(null)
 const [editingConversationTitle, setEditingConversationTitle] = useState<string>('')
 
-// System Prompt Status
+// System prompt status
 const [systemPromptApplied, setSystemPromptApplied] = useState<boolean>(false)
 ```
 
@@ -783,11 +783,11 @@ const [searchResults, setSearchResults] = useState<WebPageRecord[]>([])
 const [searchBusy, setSearchBusy] = useState<boolean>(false)
 const [searchError, setSearchError] = useState<string>('')
 
-// DB Result Filtering
+// DB result filtering
 const [dbResultsQuery, setDbResultsQuery] = useState<string>('')
 // computed: filteredDbResults = filterWebResults(searchResults, dbResultsQuery)
 
-// Web Preview
+// Web preview
 const [previewResults, setPreviewResults] = useState<WebPreviewItem[]>([])
 const [previewSelected, setPreviewSelected] = useState<Record<string, boolean>>({})
 const [previewBusy, setPreviewBusy] = useState<boolean>(false)
@@ -817,7 +817,7 @@ const [globalSettings, setGlobalSettings] = useState<GlobalSettings>({
 const [chatSettings, setChatSettings] = useState<ChatSettings>({
   temperature: 0.5,            // 0-1.0
   model: 'gpt-4',              // gpt-4, gpt-3.5, claude, local
-  writingStyle: 'formal',      // formal, normal, casual, technisch
+  writingStyle: 'formal',      // formal, normal, casual, technical
   systemPrompt: '...'          // chat-specific
 })
 
@@ -828,7 +828,7 @@ const [globalSettingsOpen, setGlobalSettingsOpen] = useState<boolean>(false)
 
 ---
 
-## 🔐 Datensicherheit & Isolation
+## 🔐 Data Security & Isolation
 
 ### Per-Chat Database Files
 ```
@@ -837,9 +837,9 @@ server/data/chat-2.db
 server/data/chat-3.db
 ...
 
-Jede Datei:
-- SQLite 3 Binary
-- Maximal ~500MB
+Each file:
+- SQLite 3 binary
+- Max ~500MB
 - Auto-created on first crawl
 - Encrypted (optional)
 - Independent of other chats
@@ -847,7 +847,7 @@ Jede Datei:
 
 ### Query Isolation
 ```javascript
-// Alle DB-Queries spezifizieren chatId
+// All DB queries specify chatId
 app.get('/api/pages/search', async (req, res) => {
   const { chatId } = req.query
   const db = getDb(chatId)  // ← Per-chat DB file
@@ -878,18 +878,18 @@ const text = extractText(html).slice(0, 5000)  // ← truncate
 ## 🚀 Performance Considerations
 
 ### Frontend Optimizations
-- **React.useState** für State Management
-- **Event Delegation** für Click Handlers
-- **CSS Grid** statt Flexbox für komplexe Layouts
-- **Lazy Loading** von Themes/Translations
+- **React.useState** for state management
+- **Event delegation** for click handlers
+- **CSS Grid** instead of flexbox for complex layouts
+- **Lazy loading** of themes/translations
 - **Memoization** (TODO: useMemo, useCallback)
 
 ### Backend Optimizations
-- **8x Parallel Fetching** mit Worker Pool
-- **Content Hashing** für Duplikat-Erkennung
-- **DB Indexing** auf url, title, content_hash
-- **Keep-Alive HTTP** für schnelle Requests
-- **Gzip Compression** für APIs
+- **8x parallel fetching** with worker pool
+- **Content hashing** for duplicate detection
+- **DB indexing** on url, title, content_hash
+- **Keep-alive HTTP** for fast requests
+- **Gzip compression** for APIs
 
 ### Database Optimizations
 ```sql
@@ -904,7 +904,7 @@ WHERE url LIKE ? OR title LIKE ? OR content LIKE ?
 
 ---
 
-## 🧪 Testing Szenarien
+## 🧪 Testing Scenarios
 
 ### Unit Tests
 - [ ] `parseUrlList()` - URL parsing
@@ -941,25 +941,25 @@ WHERE url LIKE ? OR title LIKE ? OR content LIKE ?
 ## 🐛 Known Issues & TODOs
 
 ### In Development
-- [ ] Real AI API Integration
-- [ ] User Authentication
-- [ ] API Rate Limiting
-- [ ] Database Migrations
-- [ ] Error Telemetry
+- [ ] Real AI API integration
+- [ ] User authentication
+- [ ] API rate limiting
+- [ ] Database migrations
+- [ ] Error telemetry
 - [ ] Analytics
 
 ### Performance TODOs
 - [ ] useMemo for heavy computations
 - [ ] useCallback for event handlers
-- [ ] Virtual Scrolling für 1000+ items
-- [ ] Service Worker für offline
-- [ ] Image Optimization
+- [ ] Virtual scrolling for 1000+ items
+- [ ] Service worker for offline
+- [ ] Image optimization
 
 ### Tests
-- [ ] Unit Tests (Jest)
-- [ ] Integration Tests
-- [ ] E2E Tests (Cypress)
-- [ ] Visual Regression Tests
+- [ ] Unit tests (Jest)
+- [ ] Integration tests
+- [ ] E2E tests (Cypress)
+- [ ] Visual regression tests
 
 ---
 
@@ -967,29 +967,29 @@ WHERE url LIKE ? OR title LIKE ? OR content LIKE ?
 
 ### Separation of Concerns
 ```
-App.tsx       → UI Logic + State Management
-Functions.tsx → Business Logic + Utils
-type.tsx      → Types & Contracts
-App.css       → Styling & Layout
-server/       → API & Database
+App.tsx       → UI logic + state management
+Functions.tsx → Business logic + utilities
+type.tsx      → Types & contracts
+App.css       → Styling & layout
+server/       → API & database
 data.json     → Configuration
 ```
 
 ### State Management Pattern
 ```
-User Action
+User action
     ↓
-Event Handler (App.tsx)
+Event handler (App.tsx)
     ↓
-Validate Input (Functions.tsx)
+Validate input (Functions.tsx)
     ↓
 Call API (Functions.tsx) → server/
     ↓
-Update State (setState)
+Update state (setState)
     ↓
-Component Re-render
+Component re-render
     ↓
-UI Updated
+UI updated
 ```
 
 ### Error Handling Pattern
@@ -1006,7 +1006,7 @@ try {
   console.error(error)
   
   // User feedback
-  setError('Crawl fehlgeschlagen...')
+  setError('Crawl failed...')
 } finally {
   // Cleanup
   setCrawlBusy(false)
@@ -1015,7 +1015,7 @@ try {
 
 ---
 
-## 📚 Weitere Ressourcen
+## 📚 Additional Resources
 
 ### Frontend
 - [React Hooks API](https://react.dev/reference/react/hooks)
@@ -1034,14 +1034,14 @@ try {
 
 ---
 
-## ✅ Qualitätsprüfliste
+## ✅ Quality Checklist
 
 - [x] **Type Safety**: 100% TypeScript
 - [x] **Responsive**: 1024px, 768px, 480px, 380px breakpoints
-- [x] **Accessibility**: ARIA-Labels, Keyboard-Nav
-- [x] **Documentation**: JSDoc + Inline Comments
-- [x] **Error Handling**: Try-Catch + User Messages
-- [x] **Code Organization**: Functions, Types, Styles separated
+- [x] **Accessibility**: ARIA labels, keyboard navigation
+- [x] **Documentation**: JSDoc + inline comments
+- [x] **Error Handling**: Try-catch + user messages
+- [x] **Code Organization**: Functions, types, styles separated
 - [x] **Performance**: 8x parallel fetching, indexed DB queries
 - [x] **Dark Mode**: Prefers-color-scheme support
 - [x] **Multi-Language**: 5 languages supported
@@ -1049,8 +1049,8 @@ try {
 
 ---
 
-**Dokumentation erstellt:** 22. Februar 2026  
+**Documentation created:** February 22, 2026  
 **API Version:** 1.0  
 **Frontend Version:** React 19.2.0  
 **Backend Version:** Express 4.18+  
-**Status:** Production Ready ✅
+**Status:** Production ready ✅

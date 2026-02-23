@@ -1,8 +1,8 @@
 # 🏗️ Architecture & Technical Design
 
-Eine detaillierte Übersicht der Anwendungsarchitektur, Datenflüsse und Design-Patterns.
+A detailed overview of the application architecture, data flows and design patterns.
 
-## 📐 High-Level Architektur
+## 📐 High-Level Architecture
 
 ```
 ┌─────────────────────────────────────────────────────┐
@@ -22,77 +22,77 @@ Eine detaillierte Übersicht der Anwendungsarchitektur, Datenflüsse und Design-
 
 ## 🔄 Unified Server Architecture (v2.0+)
 
-Das System wurde von einem **Dual-Server Setup** (Frontend 5173 + Backend 5174) zu einem **Unified Server** migriert:
+The system was migrated from a **Dual-Server Setup** (Frontend 5173 + Backend 5174) to a **Unified Server**:
 
-### Vorher (v1.x)
+### Before (v1.x)
 ```bash
 npm run dev     # Vite on :5173 (with proxy to :5174)
 npm run server  # Express on :5174 (separate process)
 ```
 
-### Jetzt (v2.0+) - Zwei Modi verfügbar
+### Now (v2.0+) - Two modes available
 
-**Mode 1: Unified Server** (Empfohlen)
+**Mode 1: Unified Server** (Recommended)
 ```bash
 npm run dev     # Vite + Express as Middleware on :5173
 ```
 
-**Mode 2: Standalone Backend** (für Full-Stack Debugging)
+**Mode 2: Standalone Backend** (for full-stack debugging)
 ```bash
-npm run server  # Express API Server on :5174 (standalone)
+npm run server  # Express API server on :5174 (standalone)
 npm run dev     # Vite on :5173 (auto-proxies to :5174)
 ```
 
-**Implementierung:**
-- `server/index.js` exportiert Express App (Vite kann importieren)
-- App hat Standalone-Check: läuft als Server wenn direkt aufgerufen
-- `vite.config.js` integriert App als Plugin-Middleware (bei Unified Mode)
-- Vite proxy konfiguriert für Standalone Mode
+**Implementation:**
+- `server/index.js` exports Express app (Vite can import)
+- App has standalone check: runs as server if called directly
+- `vite.config.js` integrates app as plugin middleware (in unified mode)
+- Vite proxy configured for standalone mode
 
-**Vorteile:**
-- Ein Terminal statt zwei
-- Schnelleres Hot-Reload
-- Keine CORS-Komplexität
-- Einfacherer Deployment
+**Benefits:**
+- One terminal instead of two
+- Faster hot-reload
+- No CORS complexity
+- Simpler deployment
 
-## 📁 Projektstruktur
+## 📁 Project Structure
 
 ```
 src/
-├── App.tsx              # 1700+ Zeilen - Hauptkomponente
-│                        # Verwaltet: Chat, Search, Filter, Applications, Files
-├── App.css              # 2000+ Zeilen - 3-Spalten Layout + Responsive
-├── Functions.tsx        # Fetch-Wrapper + Business Logic
-├── type.tsx             # 500+ Zeilen - TypeScript Typen & Interfaces
-├── main.jsx             # React Entry Point
-├── data.json            # Translations (5 Sprachen) + Themes (5 Designs)
-└── vite-env.d.ts        # Vite Type Definitions
+├── App.tsx              # 1700+ lines - Main component
+│                        # Manages: Chat, search, filter, applications, files
+├── App.css              # 2000+ lines - 3-column layout + responsive
+├── Functions.tsx        # Fetch wrapper + business logic
+├── type.tsx             # 500+ lines - TypeScript types & interfaces
+├── main.jsx             # React entry point
+├── data.json            # Translations (5 languages) + Themes (5 designs)
+└── vite-env.d.ts        # Vite type definitions
 
 server/
-├── index.js             # 1000+ Zeilen - Express API Server
+├── index.js             # 1000+ lines - Express API server
 │                        # Routes: /api/crawl, /api/search, /api/upload, /api/jobs/search
-├── db.js                # SQLite Database Manager
-├── schema.sql           # Database Schema
+├── db.js                # SQLite database manager
+├── schema.sql           # Database schema
 └── data/                # Chat-specific SQLite DBs (auto-created)
 
 docs/
-└── README.md            # API Documentation
+└── README.md            # API documentation
 
 public/
 └── (static assets if any)
 
 .
-├── vite.config.js       # Bundler + Vite Plugin Config
-├── eslint.config.js     # Linter Configuration
-├── package.json         # Dependencies + Scripts
-└── index.html           # HTML Entry Point
+├── vite.config.js       # Bundler + Vite plugin config
+├── eslint.config.js     # Linter configuration
+├── package.json         # Dependencies + scripts
+└── index.html           # HTML entry point
 ```
 
 ## 🔌 Data Flow Architecture
 
 ### 1️⃣ Chat Message Flow
 ```
-User Types Message
+User types message
     ↓
 handleSendMessage()
     ↓
@@ -100,7 +100,7 @@ Add to messages array
     ↓
 /api/ai/chat endpoint
     ↓
-Dispatch to AI Provider (OpenAI, Claude, etc.)
+Dispatch to AI provider (OpenAI, Claude, etc.)
     ↓
 Response → messages array
     ↓
@@ -119,7 +119,7 @@ Extract title & text from HTML
     ↓
 Save to SQLite (pages table)
     ↓
-Display results in Right Column
+Display results in right column
 ```
 
 ### 3️⃣ Job Search Flow
@@ -136,16 +136,16 @@ Parallel requests to 6 job APIs:
   - Reed
   - RemoteOK
     ↓
-Dedupe + merge results
+Deduplicate + merge results
     ↓
 Cache for 5 minutes
     ↓
-Display in Right Column
+Display in right column
 ```
 
 ### 4️⃣ Database Filter Flow
 ```
-User sets Include/Exclude Keywords
+User sets Include/Exclude keywords
     ↓
 handleFilterPreview()
     ↓
@@ -164,7 +164,7 @@ DELETE FROM pages WHERE ...
 
 ### 5️⃣ Batch Application Generation Flow
 ```
-User selects Template File
+User selects template file
     ↓
 handleGenerateApplications()
     ↓
@@ -210,7 +210,7 @@ CREATE TABLE files (
 )
 ```
 
-**Isolation:** Jeder Chat (chatId) hat seine eigene SQLite-Datei:
+**Isolation:** Each chat (chatId) has its own SQLite file:
 - `data/chat-1.db`
 - `data/chat-2.db`
 - `data/chat-N.db`
@@ -220,31 +220,31 @@ CREATE TABLE files (
 ```
 App (Main)
 ├── Sidebar
-│   ├── New Chat Button
-│   ├── Conversation List
-│   └── Footer (Settings, Docs, Theme Toggle)
-├── Chat Container (3-Column Grid)
-│   ├── Header (Title + Settings)
-│   ├── Left Column (Chat)
-│   │   ├── Messages Area
-│   │   └── Input + Buttons
-│   ├── Center Column (Web Database)
-│   │   ├── URL Input & Crawl
-│   │   ├── Search Fields
-│   │   └── Filter & Applications
-│   └── Right Column (Results)
-│       ├── Job Search Results
-│       ├── Web Search Results
-│       └── Database Results
-└── Floating Panels
-    ├── Settings Panel
-    ├── Global Settings Panel
-    └── Help Modal
+│   ├── New chat button
+│   ├── Conversation list
+│   └── Footer (settings, docs, theme toggle)
+├── Chat container (3-column grid)
+│   ├── Header (title + settings)
+│   ├── Left column (chat)
+│   │   ├── Messages area
+│   │   └── Input + buttons
+│   ├── Center column (web database)
+│   │   ├── URL input & crawl
+│   │   ├── Search fields
+│   │   └── Filter & applications
+│   └── Right column (results)
+│       ├── Job search results
+│       ├── Web search results
+│       └── Database results
+└── Floating panels
+    ├── Settings panel
+    ├── Global settings panel
+    └── Help modal
 ```
 
 ## 🔐 State Management
 
-**Alle State in `App.tsx` mit `useState`:**
+**All state in `App.tsx` with `useState`:**
 
 1. **Message State**
    - `messages` - Chat history
@@ -277,8 +277,8 @@ App (Main)
    - `globalSettingsOpen` - Global settings panel
 
 7. **Settings State**
-   - `globalSettings` - Language, Theme, System Prompt
-   - `chatSettings` - Temperature, Model, Writing Style
+   - `globalSettings` - Language, theme, system prompt
+   - `chatSettings` - Temperature, model, writing style
 
 8. **AI Service State**
    - `aiProvider` - Current provider (openai, claude, etc.)
@@ -321,13 +321,13 @@ App (Main)
 
 ## 🎨 Styling Architecture
 
-**CSS Structure:**
-1. **Root Variables** (`:root`) - CSS custom properties for colors
-2. **Media Queries** - Responsive breakpoints (768px, 480px)
-3. **Component Classes** - BEM-like naming
-4. **Dark Mode Support** - `@media (prefers-color-scheme: dark)`
+**CSS structure:**
+1. **Root variables** (`:root`) - CSS custom properties for colors
+2. **Media queries** - Responsive breakpoints (768px, 480px)
+3. **Component classes** - BEM-like naming
+4. **Dark mode support** - `@media (prefers-color-scheme: dark)`
 
-**3-Column Layout:**
+**3-column layout:**
 ```css
 .chat-container {
   display: grid;
@@ -352,7 +352,7 @@ App (Main)
 
 2. **Caching**
    - Job search results: 5-minute cache (in-memory)
-   - Database queries: No caching (always fresh)
+   - Database queries: Always fresh (no caching)
 
 3. **Lazy Loading**
    - Components render only when needed
@@ -379,7 +379,7 @@ npm run server       # Run Express standalone on :5174
 npm run preview      # Preview built bundle locally
 ```
 
-**Production Setup:**
+**Production setup:**
 - Run `npm run build` to generate optimized bundle
 - Deploy `dist/` folder to static hosting (CDN, S3, GitHub Pages)
 - Run `npm run server` on backend server
@@ -408,15 +408,15 @@ npm run preview      # Preview built bundle locally
 
 ## 📚 Type Safety
 
-**All TypeScript Types in `type.tsx`:**
-- Message, Conversation Types
-- Settings (Global + Chat-specific)
-- API Response Types (WebPageRecord, JobSearchItem, etc.)
-- AI Service Types (AiServiceConfig, AiProviderType)
-- File Types (TemplateFile, FileUploadPayload)
-- Database Types (DbFilterParams, BatchApplicationParams)
+**All TypeScript types in `type.tsx`:**
+- Message, conversation types
+- Settings (global + chat-specific)
+- API response types (WebPageRecord, JobSearchItem, etc.)
+- AI service types (AiServiceConfig, AiProviderType)
+- File types (TemplateFile, FileUploadPayload)
+- Database types (DbFilterParams, BatchApplicationParams)
 
-**Key Principles:**
+**Key principles:**
 - No `any` types
 - Strict null checks
 - Readonly collections where appropriate
@@ -433,17 +433,19 @@ No automated tests yet. Considerations for future:
 ## 📊 Code Quality
 
 - **Linting:** ESLint (eslint.config.js)
-- **Type Checking:** TypeScript strict mode
-- **Code Organization:** By feature/concern
+- **Type checking:** TypeScript strict mode
+- **Code organization:** By feature/concern
 - **Documentation:** Inline comments + JSDoc for complex functions
 
 ## 🔮 Future Improvements
 
 1. **Encryption** - API keys & sensitive data
-2. **Rate Limiting** - Prevent abuse of crawling/job search
-3. **Advanced Search** - Full-text search with ranking
-4. **Offline Mode** - Service workers + IndexedDB
-5. **Multi-File Upload** - Batch upload support
-6. **Custom Prompts** - Save & reuse prompts
+2. **Rate limiting** - Prevent abuse of crawling/job search
+3. **Advanced search** - Full-text search with ranking
+4. **Offline mode** - Service workers + IndexedDB
+5. **Multi-file upload** - Batch upload support
+6. **Custom prompts** - Save & reuse prompts
 7. **Analytics** - Track usage patterns
 8. **Export** - SQLite → CSV/Excel export
+
+---

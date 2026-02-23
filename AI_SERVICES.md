@@ -1,49 +1,49 @@
-# KI-Service Integrationsanleitung
+# AI Service Integration Guide
 
-Dieses Dokument erklärt wie man die verschiedenen KI-Services in der Application konfiguriert und nutzt.
+This document explains how to configure and use the various AI services in the application.
 
-## 🎯 Übersicht der unterstützten Services
+## 🎯 Overview of Supported Services
 
-Die Application unterstützt 5 verschiedene KI-Service Provider:
+The application supports 5 different AI service providers:
 
-| Service | Kostenlos | Offline | Modelle | Setup-Schwierigkeit |
-|---------|-----------|---------|---------|---------------------|
-| **OpenAI** | ❌ Nach Credits | ❌ Nein | GPT-4, GPT-3.5 | ⭐⭐ Mittel |
-| **Claude** | ❌ Nach Credits | ❌ Nein | Claude 3 Opus/Sonnet | ⭐⭐ Mittel |
-| **Gemini** | ✅ (Limits) | ❌ Nein | Gemini Pro | ⭐⭐ Mittel |
-| **Ollama** | ✅ | ✅ Ja | Llama, Mistral, etc. | ⭐⭐⭐ Schwer |
-| **Lokal** | ✅ | ✅ Ja | Echo (Demo) | ⭐ Leicht |
+| Service | Free | Offline | Models | Setup Difficulty |
+|---------|------|---------|--------|------------------|
+| **OpenAI** | ❌ Credit-based | ❌ No | GPT-4, GPT-3.5 | ⭐⭐ Medium |
+| **Claude** | ❌ Credit-based | ❌ No | Claude 3 Opus/Sonnet | ⭐⭐ Medium |
+| **Gemini** | ✅ (Limits) | ❌ No | Gemini Pro | ⭐⭐ Medium |
+| **Ollama** | ✅ | ✅ Yes | Llama, Mistral, etc. | ⭐⭐⭐ Hard |
+| **Local** | ✅ | ✅ Yes | Echo (Demo) | ⭐ Easy |
 
 ---
 
 ## 1️⃣ OpenAI Integration
 
-### Setup-Schritte
+### Setup Steps
 
-1. **API-Schlüssel besorgen:**
-   - Gehe zu [https://platform.openai.com/account/api-keys](https://platform.openai.com/account/api-keys)
-   - Melde dich mit deinem OpenAI-Konto an
-   - Klicke auf "Create new secret key +"
-   - Kopiere den Schlüssel (wird nur einmal angezeigt!)
+1. **Get API Key:**
+   - Go to [https://platform.openai.com/account/api-keys](https://platform.openai.com/account/api-keys)
+   - Sign in with your OpenAI account
+   - Click "Create new secret key +"
+   - Copy the key (shown only once!)
 
-2. **In der App eingeben:**
-   - Öffne die Chat-Einstellungen (⚙️ Icon)
-   - Wähle "OpenAI" aus dem KI-Service Dropdown
-   - Klicke auf "API-Schlüssel eingeben"
-   - Paste deinen Schlüssel
-   - Wähle ein Modell: `gpt-4-turbo` oder `gpt-3.5-turbo`
+2. **Enter in App:**
+   - Open Chat Settings (⚙️ Icon)
+   - Select "OpenAI" from AI Service dropdown
+   - Click "Enter API Key"
+   - Paste your key
+   - Select a model: `gpt-4-turbo` or `gpt-3.5-turbo`
 
-3. **Testen:**
-   - Schreibe eine einfache Frage
-   - Sollte eine Antwort innerhalb von 5-10 Sekunden kommen
+3. **Test:**
+   - Write a simple question
+   - Should get a response within 5-10 seconds
 
-### Modelle
+### Models
 
-| Modell | Performance | Kosten | Context | Empfohlen für |
-|--------|-------------|--------|---------|---------------|
-| **GPT-4 Turbo** | 🔥 Sehr hoch | $$$ | 128K tokens | Komplexe Aufgaben, Code |
-| **GPT-4** | 🔥 Sehr hoch | $$$$ | 8K tokens | Hochwertige Antworten |
-| **GPT-3.5 Turbo** | ✅ Gut | $ | 4K tokens | Schnelle Antworten, Budget |
+| Model | Performance | Costs | Context | Recommended for |
+|-------|-------------|-------|---------|------------------|
+| **GPT-4 Turbo** | 🔥 Very High | $$$ | 128K tokens | Complex Tasks, Code |
+| **GPT-4** | 🔥 Very High | $$$$ | 8K tokens | High-Quality Answers |
+| **GPT-3.5 Turbo** | ✅ Good | $ | 4K tokens | Fast Answers, Budget |
 
 ### Pricing
 
@@ -59,41 +59,41 @@ GPT-3.5 Turbo:
 
 ### Troubleshooting
 
-| Problem | Lösung |
-|---------|--------|
-| "Invalid API key" | Prüfe ob Schlüssel korrekt kopiert wurde (keine Leerzeichen!) |
-| "Rate limit exceeded" | Warte 1 Minute, dann versuche es erneut |
-| Timeout nach 30s | OpenAI überlastet, versuche später oder wechsle zu GPT-3.5 |
+| Problem | Solution |
+|---------|----------|
+| "Invalid API key" | Check if key was copied correctly (no spaces!) |
+| "Rate limit exceeded" | Wait 1 minute, then try again |
+| Timeout after 30s | OpenAI overloaded, try later or switch to GPT-3.5 |
 
 ---
 
 ## 2️⃣ Anthropic Claude Integration
 
-### Setup-Schritte
+### Setup Steps
 
-1. **API-Schlüssel besorgen:**
-   - Gehe zu [https://console.anthropic.com/account/keys](https://console.anthropic.com/account/keys)
-   - Melde dich mit deinem Anthropic-Konto an
-   - Klicke auf "Create Key"
-   - Kopiere den Schlüssel
+1. **Get API Key:**
+   - Go to [https://console.anthropic.com/account/keys](https://console.anthropic.com/account/keys)
+   - Sign in with your Anthropic account
+   - Click "Create Key"
+   - Copy the key
 
-2. **In der App eingeben:**
-   - Chat-Einstellungen (⚙️)
-   - Wähle "Anthropic Claude" aus
-   - API-Schlüssel eingeben
-   - Wähle Claude 3 Opus oder Sonnet
+2. **Enter in App:**
+   - Chat Settings (⚙️)
+   - Select "Anthropic Claude"
+   - Enter API Key
+   - Choose Claude 3 Opus or Sonnet
 
-3. **Kostenlose Credits:**
-   - Neue Accounts bekommen $5 Credits
-   - Gültig für 3 Monate
+3. **Free Credits:**
+   - New accounts get $5 credits
+   - Valid for 3 months
 
-### Modelle
+### Models
 
-| Modell | Performance | Kosten | Context | Use Case |
-|--------|-------------|--------|---------|----------|
-| **Claude 3 Opus** | 🔥 Top | $$ | 200K tokens | Beste Qualität |
-| **Claude 3 Sonnet** | ✅ Gut | $ | 200K tokens | Balanced |
-| **Claude 3 Haiku** | ⚡ Schnell | $ | 200K tokens | Schnelle Antworten |
+| Model | Performance | Costs | Context | Use Case |
+|-------|-------------|-------|---------|----------|
+| **Claude 3 Opus** | 🔥 Top | $$ | 200K tokens | Best Quality |
+| **Claude 3 Sonnet** | ✅ Good | $ | 200K tokens | Balanced |
+| **Claude 3 Haiku** | ⚡ Fast | $ | 200K tokens | Fast Answers |
 
 ### Pricing
 
@@ -107,199 +107,199 @@ Claude 3 Sonnet:
   - Output: $0.015 / 1K tokens
 ```
 
-### Besonderheiten
+### Special Features
 
-- Sehr lange Context-Fenster (200K tokens)
-- Exzellente Code-Analyse
-- Starke Compliance/Sicherheit
+- Very long context window (200K tokens)
+- Excellent code analysis
+- Strong compliance/security
 
 ---
 
 ## 3️⃣ Google Gemini Integration
 
-### Setup-Schritte
+### Setup Steps
 
-1. **API-Schlüssel besorgen:**
-   - Gehe zu [https://makersuite.google.com/app/apikey](https://makersuite.google.com/app/apikey)
-   - Klicke auf "Create API key"
-   - Wähle dein Google-Project
-   - Kopiere den Schlüssel
+1. **Get API Key:**
+   - Go to [https://makersuite.google.com/app/apikey](https://makersuite.google.com/app/apikey)
+   - Click "Create API key"
+   - Select your Google Project
+   - Copy the key
 
-2. **In der App eingeben:**
-   - Chat-Einstellungen
-   - Wähle "Google Gemini" aus
-   - API-Schlüssel eingeben
+2. **Enter in App:**
+   - Chat Settings
+   - Select "Google Gemini"
+   - Enter API Key
    - Model: `gemini-pro`
 
-3. **Kostenlos testen:**
-   - Bis zu 60 API-Anfragen pro Minute (kostenlos)
-   - Keine Kreditkarte nötig!
+3. **Test for Free:**
+   - Up to 60 API calls per minute (free)
+   - No credit card required!
 
-### Modelle
+### Models
 
-| Modell | Performance | Erkenntnisse |
-|--------|-------------|-------------|
-| **Gemini Pro** | ✅ Gut | Multimodal-ready (Bilder bald) |
+| Model | Performance | Insights |
+|-------|-------------|----------|
+| **Gemini Pro** | ✅ Good | Multimodal-ready (Images coming soon) |
 
 ### Pricing
 
 ```
 Gemini Pro (Free):
-  - 60 calls/min (kostenlos)
-  - Danach: $0.00025 / 1K input tokens
+  - 60 calls/min (free)
+  - After that: $0.00025 / 1K input tokens
 ```
 
 ---
 
 ## 4️⃣ Ollama (Local LLMs)
 
-### Was ist Ollama?
+### What is Ollama?
 
-Ollama ist eine Open-Source Software zum lokalen Ausführen von LLMs. **Kein Internet nötig, keine Kosten, vollständige Privatsphäre.**
+Ollama is open-source software to run LLMs locally. **No internet needed, no costs, complete privacy.**
 
 ### Installation
 
-1. **Ollama installieren:**
-   - Gehe zu [https://ollama.ai](https://ollama.ai)
-   - Lade Version für Windows/Mac/Linux herunter
-   - Installiere und starte die Anwendung
+1. **Install Ollama:**
+   - Go to [https://ollama.ai](https://ollama.ai)
+   - Download version for Windows/Mac/Linux
+   - Install and start the application
 
-2. **Ein Modell laden:**
+2. **Download a Model:**
    ```bash
-   # Terminal/Powershell öffnen
+   # Open Terminal/Powershell
    ollama pull llama2
-   # Oder andere Modelle:
+   # Or other models:
    # ollama pull mistral
    # ollama pull neural-chat
    ```
 
-3. **Ollama Server starten:**
+3. **Start Ollama Server:**
    ```bash
    ollama serve
-   # Server läuft dann auf http://localhost:11434
+   # Server runs on http://localhost:11434
    ```
 
-4. **In der App verwenden:**
-   - Chat-Einstellungen
-   - Wähle "Ollama (Lokal)" aus
-   - API-URL: `http://localhost:11434` (Standard)
-   - Modell: `llama2` (oder dein geladenes Modell)
-   - Fertig! Tippe deine Nachricht
+4. **Use in App:**
+   - Chat Settings
+   - Select "Ollama (Local)"
+   - API URL: `http://localhost:11434` (default)
+   - Model: `llama2` (or your downloaded model)
+   - Done! Type your message
 
-### Verfügbare Modelle
+### Available Models
 
-| Modell | Größe | Speed | Qualität | VRAM benötigt |
-|--------|-------|-------|----------|---------------|
-| **Llama 2** | 7B | ⚡⚡ | ✅ Gut | 8 GB |
-| **Mistral** | 7B | ⚡⚡⚡ | ✅ Sehr Gut | 8 GB |
-| **Neural Chat** | 7B | ⚡⚡ | ✅ Spezialisiert | 8 GB |
-| **Llama 2 13B** | 13B | ⚡ | 🔥 Besser | 16 GB |
+| Model | Size | Speed | Quality | VRAM Required |
+|-------|------|-------|---------|---------------|
+| **Llama 2** | 7B | ⚡⚡ | ✅ Good | 8 GB |
+| **Mistral** | 7B | ⚡⚡⚡ | ✅ Very Good | 8 GB |
+| **Neural Chat** | 7B | ⚡⚡ | ✅ Specialized | 8 GB |
+| **Llama 2 13B** | 13B | ⚡ | 🔥 Better | 16 GB |
 
-### Systemanforderungen
+### System Requirements
 
-- **RAM:** Minimum 8 GB (besser 16 GB)
-- **VRAM:** Für GPU-Beschleunigung (optional)
-- **Disk:** 5-10 GB pro Modell
+- **RAM:** Minimum 8 GB (better 16 GB)
+- **VRAM:** For GPU acceleration (optional)
+- **Disk:** 5-10 GB per model
 
-### Vorteile
+### Advantages
 
-✅ Kostenlos  
-✅ Offline (keine Netzwerkanhängigkeit)  
-✅ Privat (keine Daten verlassen deinen Rechner)  
-✅ Keine API-Keys nötig  
-✅ Unbegrenzte Nutzung  
+✅ Free
+✅ Offline (no network dependency)
+✅ Private (no data leaves your computer)
+✅ No API keys needed
+✅ Unlimited usage
 
-### Nachteile
+### Disadvantages
 
-❌ Langsamer als Cloud-Services  
-❌ Höhere Systemanforderungen  
-❌ Weniger gelungene Ergebnisse als GPT-4  
-
----
-
-## 5️⃣ Lokal Echo (Demo)
-
-Der Local Echo Service ist für **Demo und Testzwecke** da.
-
-- **Modell:** `echo`
-- **Was macht es:** Repetiert deine Eingabe zurück
-- **Nützlich für:** UI-Tests ohne externe APIs
+❌ Slower than cloud services
+❌ Higher system requirements
+❌ Less polished results than GPT-4  
 
 ---
 
-## 🔄 Service Vergleich & Empfehlungen
+## 5️⃣ Local Echo (Demo)
 
-### Für Anfänger: **Gemini (Kostenlos)**
-```
-✅ Kostenlos (60 calls/min)
-✅ Keine Kreditkarte
-✅ Einfaches Setup
-✅ Gute Qualität
-```
+The Local Echo service is for **demo and testing purposes**.
 
-### Für Profis: **Claude 3 Opus**
-```
-✅ Beste Qualität
-✅ Längste Context (200K)
-✅ Exzellent für Code
-✅ Starke Compliance
-```
+- **Model:** `echo`
+- **What it does:** Repeats your input back
+- **Useful for:** UI tests without external APIs
 
-### Für Budget: **GPT-3.5 Turbo**
+---
+
+## 🔄 Service Comparison & Recommendations
+
+### For Beginners: **Gemini (Free)**
 ```
-✅ Sehr günstig
-✅ Schnell
-✅ Gute Qualität
-✅ Große Community
+✅ Free (60 calls/min)
+✅ No credit card
+✅ Simple setup
+✅ Good quality
 ```
 
-### Für Privatsphäre: **Ollama Local**
+### For Professionals: **Claude 3 Opus**
 ```
-✅ Komplett offline
-✅ Kostenlos
-✅ Private Daten
-✅ Keine Rate Limits
-❌ Setzt sich Ressourcen
+✅ Best quality
+✅ Longest context (200K)
+✅ Excellent for code
+✅ Strong compliance
+```
+
+### For Budget: **GPT-3.5 Turbo**
+```
+✅ Very cheap
+✅ Fast
+✅ Good quality
+✅ Large community
+```
+
+### For Privacy: **Ollama Local**
+```
+✅ Completely offline
+✅ Free
+✅ Private data
+✅ No rate limits
+❌ Uses system resources
 ```
 
 ---
 
-## 🔐 Sicherheit & API-Keys
+## 🔐 Security & API Keys
 
 ### Best Practices
 
-1. **Niemals teilen**
+1. **Never Share**
    ```
-   ❌ FALSCH: Poste deine API-Keys auf GitHub/Social Media
-   ✅ RICHTIG: Halte Keys privat/geheim
+   ❌ WRONG: Post your API keys on GitHub/Social Media
+   ✅ RIGHT: Keep keys private/secret
    ```
 
-2. **In Umgebungsvariablen speichern** (für Produktion)
+2. **Store in Environment Variables** (for production)
    ```
    # .env file
    OPENAI_API_KEY=sk-...
    CLAUDE_API_KEY=sk-ant-...
    ```
 
-3. **Regelmäßig rotieren** (Schlüssel wechseln)
-   - Deine Accounts → API-Keys
-   - Alte Keys löschen
-   - Neue Keys generieren
+3. **Rotate Regularly** (change keys)
+   - Your Accounts → API Keys
+   - Delete old keys
+   - Generate new keys
 
-4. **Limits setzen** (im Provider-Dashboard)
+4. **Set Limits** (in provider dashboard)
    - Maximum monthly spend
-   - Rate limits konfigurieren
+   - Configure rate limits
 
-### In dieser App
+### In This App
 
 ```typescript
-// Keys werden mit einfacher Verschlüsselung im Browser
-// gespeichert (localStorage)
+// Keys are stored with simple encryption in browser
+// (localStorage)
 // 
-// Für Produktion würde man verwenden:
-// - Server-seitige Key-Speicherung
-// - Environment Variables
-// - Secrets Manager (AWS, Azure, etc.)
+// For production, use:
+// - Server-side key storage
+// - Environment variables
+// - Secrets manager (AWS, Azure, etc.)
 ```
 
 ---
@@ -319,75 +319,75 @@ Der Local Echo Service ist für **Demo und Testzwecke** da.
 ### Service-spezifische Probleme
 
 **OpenAI:**
-- Prüfe Guthaben auf [platform.openai.com](https://platform.openai.com/account/billing/overview)
-- API-Key in [Account Settings](https://platform.openai.com/account/api-keys)
+- Check balance on [platform.openai.com](https://platform.openai.com/account/billing/overview)
+- API key in [Account Settings](https://platform.openai.com/account/api-keys)
 
 **Claude:**
-- Prüfe Credits auf [console.anthropic.com](https://console.anthropic.com)
-- API-Key in [Account Settings](https://console.anthropic.com/account/keys)
+- Check credits on [console.anthropic.com](https://console.anthropic.com)
+- API key in [Account Settings](https://console.anthropic.com/account/keys)
 
 **Ollama:**
-- Prüfe ob Ollama server läuft: `curl http://localhost:11434/api/tags`
-- Falls nicht: `ollama serve` im Terminal
-- Prüfe ob Modell heruntergeladen: `ollama ls`
+- Check if Ollama server is running: `curl http://localhost:11434/api/tags`
+- If not: `ollama serve` in terminal
+- Check if model is downloaded: `ollama ls`
 
 ---
 
-## 📊 Performance-Vergleich
+## 📊 Performance Comparison
 
 ```
-Response Time (typisch):
-  GPT-4: 5-10s (abhängig von Load)
+Response Time (typical):
+  GPT-4: 5-10s (depends on load)
   GPT-3.5: 2-5s
   Claude: 3-7s
   Gemini: 2-4s
-  Ollama: 5-30s (auf schwacher Hardware)
+  Ollama: 5-30s (on slower hardware)
 ```
 
 ---
 
-## 🚀 Nächste Schritte
+## 🚀 Next Steps
 
-1. **Wähle einen Service:**
-   - Anfänger → Gemini
-   - Qualität → Claude oder GPT-4
-   - Budget → GPT-3.5 oder Ollama
+1. **Choose a Service:**
+   - Beginners → Gemini
+   - Quality → Claude or GPT-4
+   - Budget → GPT-3.5 or Ollama
 
-2. **Hole dir API-Key:**
-   - Folge der Setup-Anleitung oben
+2. **Get API Key:**
+   - Follow the setup guide above
 
-3. **Teste die Integation:**
-   - Stelle eine Frage in der App
-   - Überprüfe die Antwort
+3. **Test the Integration:**
+   - Ask a question in the app
+   - Check the response
 
-4. **Optimiere deine Settings:**
-   - Temperature (Kreativität)
-   - System Prompt (Anweisung)
-   - Modell (basierend auf Aufgabe)
+4. **Optimize Your Settings:**
+   - Temperature (creativity)
+   - System Prompt (instructions)
+   - Model (based on task)
 
 ---
 
-## 📚 Ressourcen
+## 📚 Resources
 
 - **OpenAI Docs:** https://platform.openai.com/docs
 - **Claude Docs:** https://docs.anthropic.com
 - **Gemini Docs:** https://ai.google.dev
 - **Ollama:** https://ollama.ai
-- **Model Vergleich:** https://www.promptengineering.org/models
+- **Model Comparison:** https://www.promptengineering.org/models
 
 ---
 
 ## 💬 Support
 
-Hast du Fragen oder Probleme?
+Have questions or problems?
 
-1. **Siehe das Troubleshooting Kapitel oben**
-2. **Prüfe die Provider-Dokumentation (Links oben)**
-3. **Kontaktiere den jeweiligen Service-Support:**
+1. **See the Troubleshooting chapter above**
+2. **Check the provider documentation (links above)**
+3. **Contact the respective service support:**
    - OpenAI: https://help.openai.com
    - Claude: https://support.anthropic.com
    - Google: https://support.google.com
 
 ---
 
-*Letzte Aktualisierung: 2024*
+*Last Updated: 2026*

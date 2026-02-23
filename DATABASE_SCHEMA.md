@@ -1,12 +1,12 @@
 # 🗄️ Database Schema & Data Model
 
-Vollständige Dokumentation der SQLite Datenbankstruktur, Tabellen, Indizes und Beziehungen.
+Complete documentation of SQLite database structure, tables, indexes and relationships.
 
 ---
 
 ## 📍 Database Location
 
-Jeder Chat hat seine eigene isolierte SQLite-Datei:
+Each chat has its own isolated SQLite file:
 
 ```
 server/data/
@@ -16,26 +16,26 @@ server/data/
 └── chat-N.db
 ```
 
-**Dateiname Format:** `chat-{chatId}.db`
-- Automatisch erstellt beim ersten API Request
-- Gelöscht wenn Chat aus Konversationsliste entfernt wird
-- Enthält ~1-10MB Daten je nach Crawl-Größe
+**File name format:** `chat-{chatId}.db`
+- Automatically created on first API request
+- Deleted when chat removed from conversation list
+- Contains ~1-10MB of data depending on crawl size
 
 ---
 
 ## 📊 Tables Overview
 
-| Tabelle | Zeilen | Zweck | Größe |
-|---------|--------|-------|-------|
-| `pages` | Variabel (0-10000+) | Gecrawlte Webseiten | ~50-100MB |
-| `files` | Klein (0-100) | Hochgeladene Template-Dateien | ~1-10MB |
-| `sqlite_sequence` | 1 | Auto-increment Tracking | < 1KB |
+| Table | Rows | Purpose | Size |
+|-------|------|---------|------|
+| `pages` | Variable (0-10000+) | Crawled web pages | ~50-100MB |
+| `files` | Small (0-100) | Uploaded template files | ~1-10MB |
+| `sqlite_sequence` | 1 | Auto-increment tracking | < 1KB |
 
 ---
 
 ## 📋 Table: `pages`
 
-Speichert alle gecrawlten Webseiten und deren Inhalte.
+Stores all crawled web pages and their content.
 
 ### Schema
 
@@ -53,33 +53,33 @@ CREATE TABLE pages (
 );
 ```
 
-### Spalten
+### Columns
 
-| Spalte | Typ | Constraints | Beschreibung |
-|--------|-----|-------------|-------------|
-| `id` | INTEGER | PRIMARY KEY, AUTOINCREMENT | Eindeutige Seiten-ID |
-| `url` | TEXT | UNIQUE, NOT NULL | URL der Webseite (eindeutig!) |
-| `title` | TEXT | NOT NULL | Seitentitel (von `<title>` tag) |
-| `content` | TEXT | NOT NULL | Extrahierter Text-Inhalt (ohne HTML) |
-| `status_code` | INTEGER | Optional | HTTP Status Code (200, 404, 500, etc.) |
-| `content_hash` | TEXT | Optional | SHA-256 Hash des Inhalts (Duplikat-Detection) |
-| `fetched_at` | DATETIME | DEFAULT NOW | Zeitpunkt des Crawling |
-| `created_at` | DATETIME | DEFAULT NOW | Erstellungsdatum |
-| `updated_at` | DATETIME | DEFAULT NOW | Letzte Änderung |
+| Column | Type | Constraints | Description |
+|--------|------|-------------|-------------|
+| `id` | INTEGER | PRIMARY KEY, AUTOINCREMENT | Unique page ID |
+| `url` | TEXT | UNIQUE, NOT NULL | Website URL (unique!) |
+| `title` | TEXT | NOT NULL | Page title (from `<title>` tag) |
+| `content` | TEXT | NOT NULL | Extracted text content (without HTML) |
+| `status_code` | INTEGER | Optional | HTTP status code (200, 404, 500, etc.) |
+| `content_hash` | TEXT | Optional | SHA-256 hash of content (duplicate detection) |
+| `fetched_at` | DATETIME | DEFAULT NOW | Time of crawling |
+| `created_at` | DATETIME | DEFAULT NOW | Creation date |
+| `updated_at` | DATETIME | DEFAULT NOW | Last modification |
 
-### Besonderheiten
+### Special Features
 
-**UNIQUE Constraint auf `url`:**
-- Verhindert Duplikate
-- Crawling derselben URL → UPDATE statt INSERT
-- Konflikt-Handling: Überwrite alt mit neu
+**UNIQUE constraint on `url`:**
+- Prevents duplicates
+- Crawling same URL → UPDATE instead of INSERT
+- Conflict handling: Overwrite old with new
 
-**Content Hash:**
-- SHA-256 Hash des `content`
-- Nutzen: Detect wenn Inhalt identisch (Mirror-Seiten)
-- Optional gespeichert für Analyse
+**Content hash:**
+- SHA-256 hash of `content`
+- Use: detect if content is identical (mirror sites)
+- Optionally stored for analysis
 
-### Indizes
+### Indexes
 
 ```sql
 CREATE INDEX idx_pages_url ON pages(url);
@@ -88,11 +88,11 @@ CREATE INDEX idx_pages_title ON pages(title);
 ```
 
 **Performance:**
-- `idx_pages_url` - Schneller `WHERE url = '...'`
-- `idx_pages_fetched_at` - Sortierung nach Crawl-Zeit
-- `idx_pages_title` - Full-text Search auf Title
+- `idx_pages_url` - Faster `WHERE url = '...'`
+- `idx_pages_fetched_at` - Sorting by crawl time
+- `idx_pages_title` - Full-text search on title
 
-### Beispiel-Daten
+### Example Data
 
 ```sql
 INSERT INTO pages (url, title, content, status_code, content_hash)
@@ -109,7 +109,7 @@ VALUES (
 
 ## 📁 Table: `files`
 
-Speichert hochgeladene Template-Dateien mit Base64-kodierten Inhalten.
+Stores uploaded template files with Base64-encoded content.
 
 ### Schema
 
@@ -125,17 +125,17 @@ CREATE TABLE files (
 );
 ```
 
-### Spalten
+### Columns
 
-| Spalte | Typ | Constraints | Beschreibung |
-|--------|-----|-------------|-------------|
-| `id` | TEXT | PRIMARY KEY | Eindeutige Datei-ID (UUID oder file_xxxxx) |
-| `name` | TEXT | NOT NULL | Originalname (z.B. "application-template.txt") |
-| `mime` | TEXT | NOT NULL | MIME Type (text/plain, text/markdown, etc.) |
-| `size` | INTEGER | NOT NULL | Dateigröße in Bytes |
-| `content_base64` | TEXT | NOT NULL | Dateiinhalt Base64-kodiert |
-| `content_hash` | TEXT | Optional | SHA-256 Hash (Duplikat-Detection) |
-| `uploaded_at` | DATETIME | DEFAULT NOW | Upload-Zeitpunkt |
+| Column | Type | Constraints | Description |
+|--------|------|-------------|-------------|
+| `id` | TEXT | PRIMARY KEY | Unique file ID (UUID or file_xxxxx) |
+| `name` | TEXT | NOT NULL | Original name (e.g., "application-template.txt") |
+| `mime` | TEXT | NOT NULL | MIME type (text/plain, text/markdown, etc.) |
+| `size` | INTEGER | NOT NULL | File size in bytes |
+| `content_base64` | TEXT | NOT NULL | File content base64-encoded |
+| `content_hash` | TEXT | Optional | SHA-256 hash (duplicate detection) |
+| `uploaded_at` | DATETIME | DEFAULT NOW | Upload timestamp |
 
 ### Supported MIME Types
 
@@ -146,13 +146,13 @@ application/json    .json
 text/csv            .csv
 ```
 
-### Größenlimits
+### Size Limits
 
-- **Max Dateigröße:** 10 MB (enforced in API)
-- **Max Dateianzahl:** Unbegrenzt (aber praktisch ~100 sinnvoll)
-- **Base64 Overhead:** ~33% größer als Original
+- **Max file size:** 10 MB (enforced in API)
+- **Max file count:** Unlimited (but practically ~100 reasonable)
+- **Base64 overhead:** ~33% larger than original
 
-### Beispiel-Daten
+### Example Data
 
 ```sql
 INSERT INTO files (id, name, mime, size, content_base64)
@@ -171,14 +171,14 @@ VALUES (
 
 ```
 pages (1) ───┐
-             ├─ Keine direkten Beziehungen
+             ├─ No direct relationships
 files (1) ───┘
 ```
 
-**Keine Foreign Keys:**
-- Einfache, flache Struktur
-- Pages & Files sind unabhängig
-- Ermöglicht Chat-Isolation einfach
+**No foreign keys:**
+- Simple, flat structure
+- Pages & files are independent
+- Enables chat isolation easily
 
 ---
 
@@ -186,23 +186,23 @@ files (1) ───┘
 
 ### Typical Database Sizes
 
-| Verwendung | Pages | Größe |
-|-----------|----------|-------|
-| Light User | 50-200 | 2-5 MB |
-| Regular User | 200-1000 | 10-50 MB |
-| Power User | 1000-5000+ | 50-250+ MB |
+| Usage | Pages | Size |
+|-------|-------|------|
+| Light user | 50-200 | 2-5 MB |
+| Regular user | 200-1000 | 10-50 MB |
+| Power user | 1000-5000+ | 50-250+ MB |
 
 ### Growth Rate
 
-Bei 100 Seiten pro Tag:
-- **Monatlich:** 3000 Seiten (~150 MB)
-- **Jährlich:** 36500 Seiten (~2 GB)
+At 100 pages per day:
+- **Monthly:** 3000 pages (~150 MB)
+- **Yearly:** 36500 pages (~2 GB)
 
 ---
 
 ## 🔍 Query Examples
 
-### Alle Seiten abrufen
+### Retrieve all pages
 ```sql
 SELECT id, url, title, fetched_at 
 FROM pages 
@@ -210,19 +210,19 @@ ORDER BY fetched_at DESC
 LIMIT 50;
 ```
 
-### Nach Suchtext suchen
+### Search for text
 ```sql
 SELECT id, url, title, 
        CASE 
-         WHEN title LIKE '%React%' THEN 'In Title'
-         WHEN content LIKE '%React%' THEN 'In Content'
+         WHEN title LIKE '%React%' THEN 'In title'
+         WHEN content LIKE '%React%' THEN 'In content'
        END as match_type
 FROM pages 
 WHERE title LIKE '%React%' OR content LIKE '%React%'
 ORDER BY fetched_at DESC;
 ```
 
-### Seiten filtern (Include Keywords)
+### Filter pages (include keywords)
 ```sql
 SELECT * FROM pages 
 WHERE (
@@ -232,7 +232,7 @@ WHERE (
 ORDER BY fetched_at DESC;
 ```
 
-### Seiten filtern (Exclude Keywords)
+### Filter pages (exclude keywords)
 ```sql
 SELECT * FROM pages 
 WHERE (
@@ -242,7 +242,7 @@ WHERE (
 ORDER BY fetched_at DESC;
 ```
 
-### Duplikate finden
+### Find duplicates
 ```sql
 SELECT content_hash, COUNT(*) as count, GROUP_CONCAT(id) as ids
 FROM pages 
@@ -251,7 +251,7 @@ GROUP BY content_hash
 HAVING count > 1;
 ```
 
-### Statistiken
+### Get statistics
 ```sql
 SELECT 
   COUNT(*) as total_pages,
@@ -262,12 +262,12 @@ SELECT
 FROM pages;
 ```
 
-### Nach Status Code filtern
+### Filter by status code
 ```sql
--- Alle erfolgreichen (200)
+-- All successful (200)
 SELECT * FROM pages WHERE status_code = 200;
 
--- Alle Fehler (4xx, 5xx)
+-- All errors (4xx, 5xx)
 SELECT * FROM pages WHERE status_code >= 400;
 
 -- Grouped by status
@@ -277,18 +277,18 @@ GROUP BY status_code
 ORDER BY COUNT(*) DESC;
 ```
 
-### Älteste Einträge löschen
+### Delete old entries
 ```sql
 DELETE FROM pages 
 WHERE fetched_at < datetime('now', '-30 days');
 ```
 
-### Transfer Seiten zwischen Chats
+### Transfer pages between chats
 ```sql
--- Exportieren
+-- Export
 SELECT * FROM pages;
 
--- Importieren (in anderer DB)
+-- Import (in other DB)
 ATTACH DATABASE 'server/data/chat-2.db' AS other;
 INSERT INTO other.pages SELECT * FROM pages;
 ```
@@ -315,10 +315,10 @@ INSERT INTO other.pages SELECT * FROM pages;
 
 ### Orphan Prevention
 
-Keine Foreign Keys → Keine Orphans möglich:
-- Pages sind eigenständig
-- Files sind eigenständig
-- Löschen eines Eintrags → Keine Abhängigkeiten
+No foreign keys → No orphans possible:
+- Pages are self-contained
+- Files are self-contained
+- Deleting entry → No dependencies
 
 ---
 
@@ -331,15 +331,15 @@ const dbPath = `server/data/chat-${chatId}.db`;
 const db = new Database(dbPath);
 ```
 
-**Vorteile:**
-- ✅ Vollständige Datenisolation
-- ✅ Schnelle Chat-Löschung (Datei löschen)
-- ✅ Keine Cross-Chat Abfragen
-- ✅ Einfaches Backup (eine Datei = ein Chat)
+**Advantages:**
+- ✅ Complete data isolation
+- ✅ Fast chat deletion (delete file)
+- ✅ No cross-chat queries
+- ✅ Easy backup (one file = one chat)
 
-**Nachteile:**
-- ❌ Keine Chat-übergreifenden Queries
-- ❌ Speicher-Overhead (multiple DB connections)
+**Disadvantages:**
+- ❌ No cross-chat queries
+- ❌ Storage overhead (multiple DB connections)
 
 ---
 
@@ -348,13 +348,13 @@ const db = new Database(dbPath);
 ### Optimize Database
 
 ```sql
--- Optimize auf Disk-Space
+-- Optimize for disk space
 VACUUM;
 
--- Rebuild Indizes
+-- Rebuild indexes
 REINDEX;
 
--- Analyze Query Optimizer
+-- Analyze query optimizer
 ANALYZE;
 ```
 
@@ -365,7 +365,7 @@ ANALYZE;
 DELETE FROM pages 
 WHERE fetched_at < datetime('now', '-90 days');
 
--- Cleanup (required after DELETE)
+-- Clean up (required after DELETE)
 VACUUM;
 ```
 
@@ -398,13 +398,13 @@ cp server/data/chat-1.db.backup server/data/chat-1.db
 
 ### For Large Databases (>100K entries)
 
-1. **Paginate Queries**
+1. **Paginate queries**
    ```sql
    SELECT * FROM pages LIMIT 100 OFFSET 0;  -- Page 1
    SELECT * FROM pages LIMIT 100 OFFSET 100; -- Page 2
    ```
 
-2. **Use Indexes**
+2. **Use indexes**
    ```sql
    -- Fast: Uses index
    SELECT * FROM pages WHERE url = 'xxx';
@@ -413,7 +413,7 @@ cp server/data/chat-1.db.backup server/data/chat-1.db
    SELECT * FROM pages WHERE content LIKE '%xxx%';
    ```
 
-3. **Limit Result Sets**
+3. **Limit result sets**
    ```sql
    -- Good: Returns 50 rows
    SELECT * FROM pages LIMIT 50;
@@ -422,7 +422,7 @@ cp server/data/chat-1.db.backup server/data/chat-1.db
    SELECT * FROM pages;
    ```
 
-4. **Batch Operations**
+4. **Batch operations**
    ```sql
    BEGIN TRANSACTION;
    INSERT INTO pages VALUES (...);
@@ -435,7 +435,7 @@ cp server/data/chat-1.db.backup server/data/chat-1.db
 
 ## 🗑️ Chat Deletion
 
-Wenn Chat gelöscht wird:
+When chat is deleted:
 
 ```javascript
 // server/index.js
@@ -448,36 +448,36 @@ app.delete('/api/chats/:chatId', (req, res) => {
 });
 ```
 
-**Ergebnis:**
-- ✅ Datei `server/data/chat-1.db` gelöscht
-- ✅ Alle pages & files für diesen Chat weg
-- ✅ ~50-100 MB Speicher freigegeben
+**Result:**
+- ✅ File `server/data/chat-1.db` deleted
+- ✅ All pages & files for this chat deleted
+- ✅ ~50-100 MB storage freed
 
 ---
 
 ## 🔮 Future Improvements
 
-1. **Shared Pages Database**
-   - Zentrale DB für alle Chats
-   - Foreign Keys für Chat-Zugehörigkeit
-   - Deduplizierung über Chats
+1. **Shared pages database**
+   - Central DB for all chats
+   - Foreign keys for chat membership
+   - Deduplication across chats
 
-2. **Full-Text Search Index**
-   - FTS5 (Full Text Search)
-   - Schnellere Text-Suche
+2. **Full-text search index**
+   - FTS5 (full-text search)
+   - Faster text search
    - Better relevance ranking
 
-3. **Caching Layer**
-   - Redis für Query Cache
-   - 5-Minuten TTL
-   - Schnellere Responses
+3. **Caching layer**
+   - Redis for query cache
+   - 5-minute TTL
+   - Faster responses
 
-4. **Migrations System**
+4. **Migrations system**
    - Schema versioning
    - Auto-upgrade DBs
    - Backward compatibility
 
-5. **Audit Trail**
+5. **Audit trail**
    - Track deletions/edits
    - User action logs
    - Data recovery
@@ -486,7 +486,7 @@ app.delete('/api/chats/:chatId', (req, res) => {
 
 ## 📋 Migration Guide (v1 to v2)
 
-Falls Upgrade von v1 notwendig:
+If upgrade from v1 necessary:
 
 ### v1 Schema
 ```sql
@@ -539,7 +539,7 @@ SOLUTION: Close any other connections to database
 ```
 
 ### Corrupt Database
-**Problem:** Seiten verschwunden plötzlich
+**Problem:** Pages suddenly disappeared
 ```sql
 -- Repair
 PRAGMA integrity_check;
@@ -548,7 +548,7 @@ VACUUM;
 ```
 
 ### Slow Queries
-**Problem:** Suche dauert >5 Sekunden
+**Problem:** Search takes >5 seconds
 ```sql
 -- Use EXPLAIN to analyze
 EXPLAIN QUERY PLAN 
@@ -557,3 +557,5 @@ SELECT * FROM pages WHERE content LIKE '%term%';
 -- Add indexes if missing
 CREATE INDEX idx_pages_content ON pages(content);
 ```
+
+---

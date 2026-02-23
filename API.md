@@ -1,22 +1,22 @@
 # 🔌 API Endpoints Reference
 
-Vollständige Dokumentation aller REST API Endpoints des Application Assistant Servers.
+Complete documentation of all REST API endpoints of the Application Assistant server.
 
-**Base URL:** `http://localhost:5173` (im Development)
+**Base URL:** `http://localhost:5173` (in development)
 
 ---
 
-## 📋 Übersicht
+## 📋 Overview
 
-| Kategorie | Endpoints | Zweck |
-|-----------|-----------|-------|
-| Health | 1 | Server Status |
-| Pages (DB) | 6 | CRUD Operationen auf Crawl-Ergebnisse |
-| Filtering | 2 | Filter & Löschen von DB-Einträgen |
-| Job Search | 1 | Aggregierte Job-Suche |
-| Files | 3 | Template Upload & Management |
-| AI Services | 3 | Chat, Service-Infos, Key Validation |
-| Docs | 1 | Markdown-Dokumentation |
+| Category | Endpoints | Purpose |
+|----------|-----------|---------|
+| Health | 1 | Server status |
+| Pages (DB) | 6 | CRUD operations on crawl results |
+| Filtering | 2 | Filter & delete from DB entries |
+| Job Search | 1 | Aggregated job search |
+| Files | 3 | Template upload & management |
+| AI Services | 3 | Chat, service info, key validation |
+| Docs | 1 | Markdown documentation |
 
 **Total: 18 Endpoints**
 
@@ -25,7 +25,7 @@ Vollständige Dokumentation aller REST API Endpoints des Application Assistant S
 ## 🏥 Health Check
 
 ### `GET /api/health`
-Server Status überprüfen.
+Check server status.
 
 **Request:**
 ```bash
@@ -46,13 +46,13 @@ curl http://localhost:5173/api/health
 ## 🌐 Web Pages Database
 
 ### `GET /api/pages`
-Alle gecrawlten Seiten abrufen (mit Pagination).
+Retrieve all crawled pages (with pagination).
 
 **Query Parameters:**
-- `skip` (optional): Anzahl zu überspringe (default: 0)
-- `limit` (optional): Max Einträge (default: 50)
-- `sort` (optional): Sortierfeld (default: `fetched_at`)
-- `order` (optional): `asc` oder `desc` (default: `desc`)
+- `skip` (optional): Number to skip (default: 0)
+- `limit` (optional): Max entries (default: 50)
+- `sort` (optional): Sort field (default: `fetched_at`)
+- `order` (optional): `asc` or `desc` (default: `desc`)
 
 **Request:**
 ```bash
@@ -85,7 +85,7 @@ curl "http://localhost:5173/api/pages?skip=0&limit=20&sort=fetched_at&order=desc
 ---
 
 ### `GET /api/pages/:id`
-Einzelne Seite nach ID abrufen.
+Retrieve single page by ID.
 
 **URL Parameter:**
 - `id` (required): Page ID (integer)
@@ -120,11 +120,11 @@ curl http://localhost:5173/api/pages/1
 ---
 
 ### `GET /api/pages/search?q=query`
-Full-text Suche in gecrawlten Seiten.
+Full-text search in crawled pages.
 
 **Query Parameters:**
-- `q` (required): Suchtext
-- `limit` (optional): Max Ergebnisse (default: 50)
+- `q` (required): Search text
+- `limit` (optional): Max results (default: 50)
 
 **Request:**
 ```bash
@@ -153,7 +153,7 @@ curl "http://localhost:5173/api/pages/search?q=React+tutorial&limit=10"
 ---
 
 ### `POST /api/pages`
-Einzelne Seite manuell speichern.
+Save single page manually.
 
 **Request Body:**
 ```json
@@ -203,7 +203,7 @@ curl -X POST http://localhost:5173/api/pages \
 ---
 
 ### `POST /api/crawl`
-Mehrere URLs parallel crawlen (bis zu 8 gleichzeitig).
+Crawl multiple URLs in parallel (up to 8 simultaneously).
 
 **Request Body:**
 ```json
@@ -261,13 +261,13 @@ curl -X POST http://localhost:5173/api/crawl \
 
 **Limits:**
 - Max 50 URLs per request
-- Timeout: 30 Sekunden pro URL
-- Parallel: 8 requests gleichzeitig
+- Timeout: 30 seconds per URL
+- Parallel: 8 requests simultaneously
 
 ---
 
 ### `GET /api/pages/all`
-Alle Seiten für Batch-Operationen abrufen (keine Pagination).
+Retrieve all pages for batch operations (no pagination).
 
 **Request:**
 ```bash
@@ -287,14 +287,14 @@ curl http://localhost:5173/api/pages/all
 }
 ```
 
-**Warning:** Für große Datenbanken (>1000 Einträge) kann dies langsam sein!
+**Warning:** For large databases (>1000 entries) this can be slow!
 
 ---
 
 ## 🔍 Database Filtering
 
 ### `POST /api/pages/filter-preview`
-Vorschau welche Einträge gelöscht würden.
+Preview which entries would be deleted.
 
 **Request Body:**
 ```json
@@ -306,9 +306,9 @@ Vorschau welche Einträge gelöscht würden.
 ```
 
 **Options:**
-- `includeKeywords` (array): Mindestens eines dieser Wörter im Text/Titel
-- `excludeKeywords` (array): Keines dieser Wörter im Text/Titel
-- `operator` (string): `AND` oder `OR` für Keywords (default: `OR`)
+- `includeKeywords` (array): At least one of these words in text/title
+- `excludeKeywords` (array): None of these words in text/title
+- `operator` (string): `AND` or `OR` for keywords (default: `OR`)
 
 **Request:**
 ```bash
@@ -348,9 +348,9 @@ curl -X POST http://localhost:5173/api/pages/filter-preview \
 ---
 
 ### `POST /api/pages/filter-delete`
-Einträge basierend auf Filter löschen.
+Delete entries based on filter.
 
-**Request Body:** (identisch wie filter-preview)
+**Request Body:** (identical to filter-preview)
 ```json
 {
   "includeKeywords": ["JavaScript", "React"],
@@ -389,20 +389,20 @@ curl -X POST http://localhost:5173/api/pages/filter-delete \
 ## 💼 Job Search
 
 ### `GET /api/jobs/search?q=query`
-Aggregierte Jobsuche über 6 APIs parallel.
+Aggregated job search across 6 APIs in parallel.
 
 **Query Parameters:**
-- `q` (required): Suchbegriff (z.B. "React Developer")
-- `limit` (optional): Max Ergebnisse pro API (default: 10, max: 50)
-- `cache` (optional): Cache wiederverwenden? (default: true)
+- `q` (required): Search term (e.g., "React Developer")
+- `limit` (optional): Max results per API (default: 10, max: 50)
+- `cache` (optional): Reuse cache? (default: true)
 
 **Supported APIs:**
-1. **Arbeitnow** - Deutsche Jobs
-2. **Remotive** - Remote Jobs
-3. **The Muse** - Tech & Startup Jobs
-4. **Adzuna** - UK Jobs
-5. **Reed** - UK Jobs
-6. **RemoteOK** - Remote Jobs
+1. **Arbeitnow** - German jobs
+2. **Remotive** - Remote jobs
+3. **The Muse** - Tech & startup jobs
+4. **Adzuna** - UK jobs
+5. **Reed** - UK jobs
+6. **RemoteOK** - Remote jobs
 
 **Request:**
 ```bash
@@ -451,9 +451,9 @@ curl "http://localhost:5173/api/jobs/search?q=JavaScript+Developer&limit=20"
 ```
 
 **Cache:**
-- Ergebnisse werden 5 Minuten gecacht
-- `cached: true` bedeutet keine neuen Requests gesendet
-- Gleiche Query innerhalb 5 min → Cache Hit
+- Results cached for 5 minutes
+- `cached: true` means no new requests sent
+- Same query within 5 min → cache hit
 
 **Errors:**
 - `400 Bad Request` - Missing search query
@@ -464,11 +464,11 @@ curl "http://localhost:5173/api/jobs/search?q=JavaScript+Developer&limit=20"
 ## 📁 File Management
 
 ### `POST /api/upload`
-Template-Datei uploadm.
+Upload template file.
 
 **Request Body:** (form-data)
-- `file` (required): Die hochzuladende Datei (max 10MB)
-  - Unterstützte Formate: `.txt`, `.md`, `.json`, `.csv`
+- `file` (required): File to upload (max 10MB)
+  - Supported formats: `.txt`, `.md`, `.json`, `.csv`
 
 **Request:**
 ```bash
@@ -500,7 +500,7 @@ curl -X POST http://localhost:5173/api/upload \
 ---
 
 ### `GET /api/files`
-Alle hochgeladenen Dateien auflisten.
+List all uploaded files.
 
 **Request:**
 ```bash
@@ -536,7 +536,7 @@ curl http://localhost:5173/api/files
 ---
 
 ### `GET /api/files/:id`
-Datei-Inhalt abrufen.
+Retrieve file content.
 
 **URL Parameter:**
 - `id` (required): File ID
@@ -570,7 +570,7 @@ curl http://localhost:5173/api/files/file_abc123def456
 ## 🤖 AI Services
 
 ### `POST /api/ai/chat`
-Chat-Nachricht zu AI Service schicken (OpenAI, Claude, Gemini, etc.).
+Send chat message to AI service (OpenAI, Claude, Gemini, etc.).
 
 **Request Body:**
 ```json
@@ -578,13 +578,13 @@ Chat-Nachricht zu AI Service schicken (OpenAI, Claude, Gemini, etc.).
   "messages": [
     {
       "role": "user",
-      "content": "Schreibe eine Bewerbung für eine JavaScript Developer Position"
+      "content": "Write a job application for a JavaScript Developer position"
     }
   ],
   "settings": {
     "temperature": 0.7,
     "model": "gpt-4",
-    "system_prompt": "Du bist ein hilfreicher Assistent..."
+    "system_prompt": "You are a helpful assistant..."
   }
 }
 ```
@@ -633,7 +633,7 @@ curl -X POST http://localhost:5173/api/ai/chat \
 ---
 
 ### `GET /api/ai/services`
-Verfügbare AI-Services und deren Modelle auflisten.
+List available AI services and their models.
 
 **Request:**
 ```bash
@@ -682,7 +682,7 @@ curl http://localhost:5173/api/ai/services
 ---
 
 ### `POST /api/ai/validate-key`
-API-Schlüssel validieren.
+Validate API key.
 
 **Request Body:**
 ```json
@@ -731,15 +731,15 @@ curl -X POST http://localhost:5173/api/ai/validate-key \
 ## 📚 Documentation
 
 ### `GET /docs/:filename`
-Markdown-Dokumentationsdatei abrufen.
+Retrieve markdown documentation file.
 
 **URL Parameter:**
-- `filename` (required): Dateiname ohne `.md` Erweiterung
+- `filename` (required): Filename without `.md` extension
 
 **Supported Documents:**
 - `readme` → README.md
 - `architecture` → ARCHITECTURE.md
-- `api` → API.md (diese Datei)
+- `api` → API.md (this file)
 - `database` → DATABASE_SCHEMA.md (optional)
 
 **Request:**
@@ -787,8 +787,8 @@ curl http://localhost:5173/docs/architecture
 
 ## 🔐 Authentication
 
-**Methoden:**
-1. **Bearer Token** (für AI Services)
+**Methods:**
+1. **Bearer Token** (for AI services)
    ```
    Authorization: Bearer YOUR_API_KEY
    ```
@@ -798,7 +798,7 @@ curl http://localhost:5173/docs/architecture
    GET /api/pages?api_key=xyz123
    ```
 
-3. **Cookie** (für Browser)
+3. **Cookie** (for browser)
    ```
    Cookie: api_key=xyz123
    ```
@@ -807,16 +807,16 @@ curl http://localhost:5173/docs/architecture
 
 ## 📊 Rate Limiting
 
-- **Job Search:** 10 requests pro 5 Minuten
-- **Crawling:** Max 8 parallel, 30s timeout pro URL
-- **File Upload:** Max 10MB pro Datei
-- **AI Services:** Abhängig vom Provider
+- **Job Search:** 10 requests per 5 minutes
+- **Crawling:** Max 8 parallel, 30s timeout per URL
+- **File Upload:** Max 10MB per file
+- **AI Services:** Depends on provider
 
 ---
 
-## 🧪 Testing mit curl
+## 🧪 Testing with curl
 
-**Alle Endpoints testen:**
+**Test all endpoints:**
 ```bash
 # Health
 curl http://localhost:5173/api/health
@@ -855,3 +855,5 @@ curl http://localhost:5173/docs/architecture
 ### Version 1.0.0
 - Initial release
 - Dual server architecture (Vite + Express)
+
+---

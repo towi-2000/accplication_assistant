@@ -1,6 +1,6 @@
-# 🤖 AI Assistant & Webseiten-Recherche-Tool
+# 🤖 AI Assistant & Website Research Tool
 
-Eine moderne, vollständig responsive Browser-basierte Chat- und Recherche-Anwendung mit SQLite-Datenbank, Express-Backend und Web-Crawler-Funktionalität.
+A modern, fully responsive browser-based chat and research application with SQLite database, Express backend and web crawler functionality.
 
 ## 🎯 Features
 
